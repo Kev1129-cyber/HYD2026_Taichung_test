@@ -31,47 +31,21 @@ VILLAGES = RAW / "context_xitun_beitun_villages.geojson"
 ZONING = RAW / "shuinan_zoning_areas_2024.csv"
 PROJECTS = RAW / "shuinan_major_projects_2026.csv"
 
-# Traditional Chinese renderings of status_en / key_figures_en in
-# shuinan_major_projects_2026.csv, keyed by project_zh. `phase` drives the
-# status chip: "open" = opened / in use / in service / existing,
-# "pending" = not yet open. Projects missing here fall back to the English text.
-PROJECT_ZH = {
-    "臺中綠美圖": {
-        "phase": "open",
-        "status_zh": "2025年12月開館",
-    },
-    "臺中國際會展中心": {
-        "phase": "open",
-        "status_zh": "2026-03-23正式開幕；二期原訂2026年設計、2027年起施工",
-    },
-    "水湳轉運中心": {
-        "phase": "open",
-        "status_zh": "2026-08-05啟用；國道客運與市區公車路線分階段進駐；地下層預留未來捷運橘線介面",
-    },
-    "臺中流行影音中心（原中臺灣電影中心）": {
-        "phase": "pending",
-        "status_zh": "2025年9月報告預計2026年底開幕；尚待確認",
-    },
-    "臺中超巨蛋": {
-        "phase": "pending",
-        "status_zh": "已選出最優申請人",
-        "key_figures_zh": "基地約15.79公頃；約45,000席",
-    },
-    "中央公園": {
-        "phase": "open",
-        "status_zh": "使用中",
-        "key_figures_zh": "約67公頃",
-    },
-    "捷運綠線文華高中站": {
-        "phase": "open",
-        "status_zh": "營運中；位於中央公園南側",
-    },
-    "園區停車供給": {
-        "phase": "open",
-        "status_zh": "既有",
-        "key_figures_zh": "汽車位近8,000格；機車位逾4,500格",
-    },
+# Status chip per project, keyed by project_zh in shuinan_major_projects_2026.csv:
+# "open" = opened / in use / in service / existing, "pending" = not yet open.
+# This grouping is ours, read from status_en; unlisted projects show "unknown".
+PROJECT_PHASE = {
+    "臺中綠美圖": "open",
+    "臺中國際會展中心": "open",
+    "水湳轉運中心": "open",
+    "臺中流行影音中心（原中臺灣電影中心）": "pending",
+    "臺中超巨蛋": "pending",
+    "中央公園": "open",
+    "捷運綠線文華高中站": "open",
+    "園區停車供給": "open",
 }
+
+UNOFFICIAL = re.compile(r"\s*\(unofficial translation\)\s*$", re.I)
 
 # Landing-page download table: (file, description).
 DOWNLOADS = [
@@ -110,15 +84,15 @@ def load_data():
 
     projects = []
     for row in read_csv(PROJECTS):
-        zh = PROJECT_ZH.get(row["project_zh"], {})
+        en = row["project_en"]
         projects.append({
             "zh": row["project_zh"],
-            "en": row["project_en"],
-            "status_en": row["status_en"],
-            "status_zh": zh.get("status_zh", row["status_en"]),
-            "key_figures_en": row["key_figures_en"],
-            "key_figures_zh": zh.get("key_figures_zh", row["key_figures_en"]),
-            "phase": zh.get("phase", "unknown"),
+            # "(unofficial translation)" becomes a flag so the English name reads cleanly
+            "en": UNOFFICIAL.sub("", en),
+            "en_unofficial": bool(UNOFFICIAL.search(en)),
+            "status": row["status_en"],
+            "figures": row["key_figures_en"],
+            "phase": PROJECT_PHASE.get(row["project_zh"], "unknown"),
             "source": row["source"],
         })
 
@@ -156,10 +130,10 @@ def fill(template, values):
     return template
 
 
-def wrap_page(fragment):
+def wrap_page(fragment, lang):
     return (
         "<!doctype html>\n"
-        '<html lang="zh-Hant-TW">\n<head>\n<meta charset="utf-8">\n'
+        f'<html lang="{lang}">\n<head>\n<meta charset="utf-8">\n'
         '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n'
         # OSM tile servers expect a Referer from web pages; keep the browser default explicit.
         '<meta name="referrer" content="strict-origin-when-cross-origin">\n'
@@ -266,18 +240,18 @@ def main():
     map_page = fill(map_template, {
         "/*__DATA__*/null": payload,
         "/*__BASEMAP__*/true": "true",
-        "<!--__EYEBROW__-->": '<a href="../index.html">HYD2026臺中成果</a>｜臺中市・水湳周邊脈絡圖層',
+        "<!--__EYEBROW__-->": '<a href="../index.html">HYD2026 Taichung</a> | Shuinan context layers',
     })
-    write(MAP_OUT, wrap_page(map_page))
+    write(MAP_OUT, wrap_page(map_page, "en"))  # English leads; Chinese spans carry lang="zh-Hant-TW"
 
     landing = fill((TEMPLATES / "index.html").read_text(encoding="utf-8"), landing_values(data))
-    write(LANDING_OUT, wrap_page(landing))
+    write(LANDING_OUT, wrap_page(landing, "zh-Hant-TW"))
 
     if args.fragment:
         fragment = fill(map_template, {
             "/*__DATA__*/null": payload,
             "/*__BASEMAP__*/true": "false",
-            "<!--__EYEBROW__-->": "TAICHUNG｜臺中市・水湳周邊脈絡圖層",
+            "<!--__EYEBROW__-->": "TAICHUNG | Shuinan context layers",
         })
         args.fragment.write_text(fragment, encoding="utf-8")
         print(f"wrote {args.fragment}")
