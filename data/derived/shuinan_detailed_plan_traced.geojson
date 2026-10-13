@@ -29,31 +29,17 @@
   ],
   "checks": [
    {
-    "description": "Taichung Green Museumbrary (Chinese Wikipedia) against the north end of the traced Central Park",
+    "description": "Taichung Green Museumbrary grounds (OpenStreetMap way 485125572, centroid) against the north end of the traced Central Park",
     "drawing_mm": [
      158.0,
      221.0
     ],
-    "lon": 120.6523765,
-    "lat": 24.1929213,
-    "weight": 2.0,
-    "residual_m": [
-     -195.9,
-     -54.7
-    ]
-   },
-   {
-    "description": "Mean centre of two Central Park no-fly zones in Taichung City notices, against the park's wide lawn",
-    "drawing_mm": [
-     175.0,
-     115.0
-    ],
-    "lon": 120.6541,
-    "lat": 24.182,
+    "lon": 120.654464,
+    "lat": 24.1929462,
     "weight": 1.0,
     "residual_m": [
-     -242.8,
-     61.3
+     16.2,
+     -51.9
     ]
    }
   ],

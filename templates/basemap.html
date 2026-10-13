@@ -312,6 +312,7 @@ h1 .zh { margin-left: 0.5em; font-family: "Noto Serif TC", "Songti TC", serif; f
 /* ---------- map overlays ---------- */
 .map-ctrl {
   position: absolute;
+  z-index: 2;
   top: 16px;
   right: 16px;
   display: grid;
@@ -334,6 +335,7 @@ h1 .zh { margin-left: 0.5em; font-family: "Noto Serif TC", "Songti TC", serif; f
 .map-ctrl svg { width: 16px; height: 16px; }
 .attrib {
   position: absolute;
+  z-index: 2;
   right: 9px;
   bottom: 23px;
   padding: 1px 6px;
@@ -345,6 +347,7 @@ h1 .zh { margin-left: 0.5em; font-family: "Noto Serif TC", "Songti TC", serif; f
 .attrib a { color: inherit; }
 .coord {
   position: absolute;
+  z-index: 2;
   right: 16px;
   bottom: 48px;
   padding: 2px 6px;
@@ -588,6 +591,36 @@ h2 .zh.block { margin-top: 3px; }
 .line-key.road-metro { border-top: 2px dotted var(--ink); }
 .line-key.road-rail { border-top: 2px dashed var(--ink); }
 
+/* major projects: numbered markers, dashed footprint on hover / selection */
+.proj-hit { fill: transparent; cursor: pointer; }
+.proj-dot { fill: var(--ink); stroke: var(--surface); stroke-width: 2px; paint-order: stroke; pointer-events: none; }
+.proj-num { font: 700 10px var(--font-mono); fill: var(--surface); text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+.proj-g.is-sel .proj-dot { stroke: var(--ink); stroke-width: 6px; stroke-opacity: 0.25; }
+.proj-foot {
+  fill: var(--ink);
+  fill-opacity: 0.08;
+  stroke: var(--ink);
+  stroke-width: 1.6;
+  stroke-dasharray: 5 3;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+.pnum {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--surface);
+  font: 700 10.5px var(--font-mono);
+  flex: none;
+}
+.pnum.none { background: transparent; color: var(--muted); border: 1px dashed var(--muted); }
+.projects li.is-sel { outline: 1px solid var(--ink); outline-offset: 6px; }
+.p-loc { margin: 2px 0 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: var(--fs-xs); color: var(--muted); }
+.p-loc .btn-s { padding: 2px 8px; font-size: var(--fs-xs); }
+
 /* detailed plan overlay + reference points */
 .plan-patch {
   stroke: var(--ink);
@@ -669,11 +702,13 @@ h3.mini .zh { text-transform: none; letter-spacing: 0.02em; }
             <g id="g-roads"></g>
             <g id="g-d"></g>
             <g id="g-roadlabels"></g>
+            <path class="proj-foot" id="proj-foot"></path>
             <path class="hover-outline" id="hover-outline"></path>
             <path class="sel-outline" id="sel-outline"></path>
           </g>
           <g id="g-labels"></g>
           <g id="g-refs"></g>
+          <g id="g-proj"></g>
         </g>
         <rect class="neatline" id="neatline"></rect>
         <g id="g-ticks"></g>
@@ -714,6 +749,7 @@ h3.mini .zh { text-transform: none; letter-spacing: 0.02em; }
           <label><input type="checkbox" id="lyr-vlabel" checked>Village names<span class="zh" lang="zh-Hant-TW">里名</span></label>
           <label id="lyr-roads-wrap" hidden><input type="checkbox" id="lyr-roads" checked>Road network<span class="zh" lang="zh-Hant-TW">路網</span></label>
           <label><input type="checkbox" id="lyr-plan" checked>Detailed plan<span class="zh" lang="zh-Hant-TW">細部計畫</span></label>
+          <label><input type="checkbox" id="lyr-proj" checked>Major projects<span class="zh" lang="zh-Hant-TW">重大建設</span></label>
           <label><input type="checkbox" id="lyr-refs" checked>Reference points<span class="zh" lang="zh-Hant-TW">參考點</span></label>
         </div>
         <p class="note" id="osm-msg" hidden></p>
@@ -783,7 +819,7 @@ h3.mini .zh { text-transform: none; letter-spacing: 0.02em; }
       <section aria-labelledby="h-proj">
         <h2 id="h-proj">Major Projects in the Park<span class="zh block" lang="zh-Hant-TW">園區重大建設進度</span></h2>
         <ul class="projects" id="projects"></ul>
-        <p class="note">This table has no coordinates, so the projects are not plotted on the map yet.</p>
+        <p class="note" id="proj-note"></p>
       </section>
 
       <section aria-labelledby="h-src">
@@ -994,6 +1030,7 @@ h3.mini .zh { text-transform: none; letter-spacing: 0.02em; }
     svg.classList.toggle("zoom-detail", k > fitK * 2.5);
     drawRoadLabels();
     drawRefs();
+    drawProjects();
     drawTicks();
     drawScale();
     if (layers.osm) updateTiles();
@@ -1252,9 +1289,12 @@ h3.mini .zh { text-transform: none; letter-spacing: 0.02em; }
     // plain hover (mouse / pen)
     updateCoord(p);
     const ref = e.target.__ref || null;
-    const v = ref || aligning ? null : e.target.__v || null;
+    const pj = e.target.__proj || null;
+    const v = ref || pj || aligning ? null : e.target.__v || null;
     setHot(v);
+    if (!pj) showFoot(selProject);
     if (e.pointerType === "touch") hideTip();
+    else if (pj) showProjTip(pj, e.clientX, e.clientY);
     else if (ref) showRefTip(ref, e.clientX, e.clientY);
     else if (v) showVillageTip(v, e.clientX, e.clientY);
     else hideTip();
@@ -1263,7 +1303,13 @@ h3.mini .zh { text-transform: none; letter-spacing: 0.02em; }
     if (!ptrs.has(e.pointerId)) return;
     ptrs.delete(e.pointerId);
     if (drag && !drag.moved && e.type === "pointerup" && !drag.align) {
-      if (drag.target && drag.target.__ref) {
+      if (drag.target && drag.target.__proj) {
+        const pr = drag.target.__proj;
+        selectProject(selProject === pr ? null : pr, false);
+        const li = document.getElementById(`proj-${pr.n}`);
+        if (li && selProject) li.scrollIntoView({ block: "nearest", behavior: reduceMotion ? "auto" : "smooth" });
+        if (selProject) showProjTip(pr, e.clientX, e.clientY);
+      } else if (drag.target && drag.target.__ref) {
         showRefTip(drag.target.__ref, e.clientX, e.clientY);
       } else {
         const v = drag.target && drag.target.__v;
@@ -1599,7 +1645,12 @@ h3.mini .zh { text-transform: none; letter-spacing: 0.02em; }
     gRefs.style.display = show ? "" : "none";
     if (!show) return;
     const showLabels = view.k > fitK * 3.5;
+    const projectsShown = $("#lyr-proj").checked;
     for (const r of refs) {
+      // a project marker already stands for this place
+      const dup = projectsShown && r.project_zh && locatedProjects.has(r.project_zh);
+      r.g.style.display = dup ? "none" : "";
+      if (dup) continue;
       r.g.setAttribute("transform", `translate(${view.k * r.wx + view.tx} ${view.k * r.wy + view.ty})`);
       r.label.style.display = showLabels ? "" : "none";
     }
@@ -1693,19 +1744,100 @@ h3.mini .zh { text-transform: none; letter-spacing: 0.02em; }
   });
   zbars.addEventListener("pointerleave", hideTip);
 
-  // ---------- projects ----------
+  // ---------- projects: list + numbered markers ----------
+  // Locations come from scripts/locate_projects.py (OSM features, a road junction or a traced plan block).
   const chip = { open: ["open", "Open"], pending: ["pending", "Upcoming"], unknown: ["", "Unclassified"] };
-  $("#projects").innerHTML = DATA.projects.map((p) => {
+  const METHOD = { osm: "OpenStreetMap", intersection: "Road junction", plan_block: "Traced plan", ref: "Published coordinate" };
+  const locByZh = new Map((DATA.project_locations ? DATA.project_locations.features : []).map((f) => [f.properties.project_zh, f]));
+  const projects = DATA.projects.map((p, i) => {
+    const f = locByZh.get(p.zh);
+    const pr = { ...p, n: i + 1, loc: f && f.geometry ? f : null };
+    if (pr.loc) {
+      const [lon, lat] = pr.loc.geometry.coordinates;
+      pr.lon = lon; pr.lat = lat;
+      [pr.wx, pr.wy] = proj(lon, lat);
+      const fp = pr.loc.properties.footprint;
+      if (fp) {
+        const polys = pr.loc.properties.footprint_multi ? fp : [fp];
+        pr.footD = polys.map((poly) => poly.map((ring) => lineD(ring) + "Z").join("")).join("");
+        let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+        for (const poly of polys) for (const ring of poly) for (const [lo, la] of ring) {
+          const [x, y] = proj(lo, la);
+          x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y);
+        }
+        pr.box = [x0, y0, x1, y1];
+      }
+    }
+    return pr;
+  });
+  const locatedProjects = new Set(projects.filter((p) => p.loc).map((p) => p.zh));
+  const gProj = $("#g-proj"), projFoot = $("#proj-foot");
+  let selProject = null;
+  for (const pr of projects) {
+    if (!pr.loc) continue;
+    pr.g = svgEl("g", { class: "proj-g" }, gProj);
+    const hit = svgEl("circle", { class: "proj-hit", r: 13 }, pr.g);
+    svgEl("circle", { class: "proj-dot", r: 9 }, pr.g);
+    svgEl("text", { class: "proj-num" }, pr.g).textContent = pr.n;
+    hit.__proj = pr;
+  }
+  function drawProjects() {
+    const show = $("#lyr-proj").checked;
+    gProj.style.display = show ? "" : "none";
+    projFoot.style.display = show ? "" : "none";
+    if (!show) return;
+    for (const pr of projects) {
+      if (pr.g) pr.g.setAttribute("transform", `translate(${view.k * pr.wx + view.tx} ${view.k * pr.wy + view.ty})`);
+    }
+  }
+  const showFoot = (pr) => { if (pr && pr.footD) projFoot.setAttribute("d", pr.footD); else projFoot.removeAttribute("d"); };
+  // each source string already names its kind (OpenStreetMap feature, traced plan block, ...)
+  const locText = (pr) => pr.loc.properties.source;
+  function showProjTip(pr, cx, cy) {
+    tip.innerHTML = `<b>${pr.n} · ${esc(pr.en)}</b>${zh(pr.zh)}<br>${esc(pr.status)}<br>` +
+      `<span class="num">${pr.lat.toFixed(5)}°N, ${pr.lon.toFixed(5)}°E</span><br>${esc(locText(pr))}`;
+    placeTip(cx, cy);
+    showFoot(pr);
+  }
+  function selectProject(pr, zoom) {
+    selProject = pr;
+    for (const q of projects) {
+      if (q.g) q.g.classList.toggle("is-sel", q === pr);
+      const li = document.getElementById(`proj-${q.n}`);
+      if (li) li.classList.toggle("is-sel", q === pr);
+    }
+    showFoot(pr);
+    if (pr && zoom) {
+      if (!$("#lyr-proj").checked) { $("#lyr-proj").checked = true; }
+      interacted = true;
+      const box = pr.box || [pr.wx - 250, pr.wy - 250, pr.wx + 250, pr.wy + 250];
+      setView(fitView(box, 70, fitK * 8), true);
+    }
+  }
+  $("#lyr-proj").addEventListener("change", draw);
+  $("#projects").innerHTML = projects.map((p) => {
     const [cls, label] = chip[p.phase] || chip.unknown;
+    const loc = p.loc
+      ? `<p class="p-loc"><button type="button" class="btn-s" data-show="${p.n}">Show on map</button><span>${esc(METHOD[p.loc.properties.method] || "")}${p.loc.properties.area_ha ? ` · ${p.loc.properties.area_ha} ha mapped` : ""}</span></p>`
+      : `<p class="p-loc"><span>Park-wide figure, not mapped</span></p>`;
     return `
-      <li>
-        <div class="p-head"><h3>${esc(p.en)}</h3><span class="chip ${cls}">${label}</span></div>
+      <li id="proj-${p.n}">
+        <div class="p-head"><span class="pnum${p.loc ? "" : " none"}" aria-hidden="true">${p.n}</span><h3>${esc(p.en)}</h3><span class="chip ${cls}">${label}</span></div>
         <p class="p-zh">${zh(p.zh)}${p.en_unofficial ? ` <span class="p-flag">· unofficial English name</span>` : ""}</p>
         <p class="p-status">${esc(p.status)}</p>
         ${p.figures ? `<p class="p-fig">${esc(p.figures)}</p>` : ""}
+        ${loc}
         <p class="p-src">Source: ${esc(p.source)}</p>
       </li>`;
   }).join("");
+  $("#projects").addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-show]");
+    if (btn) selectProject(projects[+btn.dataset.show - 1], true);
+  });
+  const nLoc = locatedProjects.size;
+  $("#proj-note").textContent = nLoc
+    ? `Numbers match the markers on the map. ${nLoc} of ${projects.length} entries are placed: from OpenStreetMap features where mapped, otherwise from the traced plan; hover a marker for its source.`
+    : "This table has no coordinates, so the projects are not plotted on the map yet.";
 
   // ---------- sources ----------
   const vertexCount = DATA.villages.features.reduce((s, f) => s + rings(f.geometry).flat().reduce((t, r) => t + r.length, 0), 0);
@@ -1715,6 +1847,7 @@ h3.mini .zh { text-transform: none; letter-spacing: 0.02em; }
     `Land use: ${esc(src)}`,
     `Detailed plan overlay: ${esc(G.source)}. Placed by a similarity transform fitted to OpenStreetMap road centrelines (scale ${G.scale_m_per_mm} m per drawing mm, matching the zone areas; rotation ${G.rotation_deg}°); ${esc(G.status)}.`,
     `Reference points: coordinates as published by the sources listed with each point (Wikipedia infoboxes, OurAirports).`,
+    ...(DATA.project_locations ? [`Major project locations: OpenStreetMap features (© OpenStreetMap contributors, ODbL 1.0; fetched ${esc(DATA.project_locations.landmarks_fetched || "")}), matched by name and type; Central Park from the traced plan. Mapped footprints may differ from official site areas.`] : []),
     ...(DATA.roads ? [`Road network: © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors, ODbL 1.0; fetched ${esc(DATA.roads.fetched)} via the Overpass API and simplified to ${DATA.roads.simplify_tolerance_m} m. Local streets cover the Shuinan area only.`] : []),
     `Major projects: sources are listed with each entry. The Open / Upcoming chips are our grouping of the status text.`,
     `Coordinates: WGS84 (CRS84). The map uses Web Mercator to match the OpenStreetMap tiles; the scale bar uses the east-west scale at the center of the study area.`,

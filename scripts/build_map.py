@@ -36,6 +36,8 @@ PLAN_DXF = RAW / "Figure_7-1_Detailed_Plan_A3_English_CAD.dxf"
 PLAN = ROOT / "data" / "derived" / "shuinan_detailed_plan_traced.geojson"
 # OSM road network; fetched by scripts/fetch_roads.py (the "Fetch OSM road network" workflow). Optional.
 ROADS = ROOT / "data" / "derived" / "roads_osm.geojson"
+# Major-project points from scripts/locate_projects.py. Optional.
+PROJECT_LOC = ROOT / "data" / "derived" / "project_locations.geojson"
 
 # Status chip per project, keyed by project_zh in shuinan_major_projects_2026.csv:
 # "open" = opened / in use / in service / existing, "pending" = not yet open.
@@ -63,6 +65,7 @@ DOWNLOADS = [
     (PLAN_DXF, "Detailed plan, English reference CAD (A3 sheet units, not georeferenced)", "細部計畫圖英文參考版CAD"),
     (REFS, "Reference point coordinates and sources", "參考點座標與出處"),
     (ROADS, "Road and rail network from OpenStreetMap (ODbL)", "OSM路網（ODbL授權）"),
+    (PROJECT_LOC, "Major project locations with method and source", "重大建設位置與定位依據"),
 ]
 
 DATE_RE = re.compile(r"\d{4}-\d{2}-\d{2}")
@@ -126,6 +129,7 @@ def load_data():
         "plan": read_json(PLAN),
         "refs": read_csv(REFS),
         "roads": read_json(ROADS) if ROADS.exists() else None,
+        "project_locations": read_json(PROJECT_LOC) if PROJECT_LOC.exists() else None,
     }
 
 

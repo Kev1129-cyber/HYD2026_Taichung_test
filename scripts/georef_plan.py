@@ -48,12 +48,12 @@ TRANSLATION_M = (-1927.9, -1848.6)  # in the local plane below; None = fit to CH
 
 # Independent points, reported as residuals (and used for the fit only when
 # TRANSLATION_M is None): (drawing x mm, drawing y mm), (lon, lat), weight, description.
-# The first estimate placed the plan from these two alone, about 210 m too far west.
+# The first estimate used the Wikipedia infobox point for the Museumbrary, which sits ~210 m west of the
+# OSM-mapped grounds, plus a guessed no-fly-zone centre; it placed the plan about 210 m too far west.
 CHECKS = [
-    ((158.0, 221.0), (120.6523765, 24.1929213), 2.0,
-     "Taichung Green Museumbrary (Chinese Wikipedia) against the north end of the traced Central Park"),
-    ((175.0, 115.0), (120.6541, 24.1820), 1.0,
-     "Mean centre of two Central Park no-fly zones in Taichung City notices, against the park's wide lawn"),
+    ((158.0, 221.0), (120.654464, 24.1929462), 1.0,
+     "Taichung Green Museumbrary grounds (OpenStreetMap way 485125572, centroid) against the north end of the "
+     "traced Central Park"),
 ]
 
 # Traced colour layers -> likely land-use class. The first five are matched by
