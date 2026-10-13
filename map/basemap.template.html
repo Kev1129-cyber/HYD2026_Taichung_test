@@ -1,0 +1,1121 @@
+<title>西屯・北屯基本圖</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700&display=swap">
+<style>
+/* Layout: a survey-sheet map inside a hairline neatline with coordinate ticks in the margin (left),
+   a reference column of legend, lookup and plan figures (right); stacks to one column under 960px. */
+:root {
+  --bg: #eaefee;
+  --surface: #fbfcfc;
+  --ground: #e1e7e6;
+  --ink: #15242b;
+  --ink-2: #4b5b62;
+  --muted: #637278;
+  --rule: #d3dcdc;
+  --line-vil: #93a3a8;
+  --line-admin: #1d3038;
+  --accent: #0b6a73;
+  --accent-ink: #ffffff;
+  --d1: #2a78d6;
+  --d2: #eb6834;
+  --tint: 20%;
+  --tint-hi: 36%;
+  --neutral-fill: #b4c0c2;
+  --good: #0ca30c;
+  --warn: #fab219;
+  --shadow: 0 6px 20px rgba(21, 36, 43, 0.14);
+
+  --font-display: "Noto Serif TC", "Songti TC", "PMingLiU", serif;
+  --font-body: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+
+  --fs-xs: 11px;
+  --fs-sm: 12.5px;
+  --fs-md: 14px;
+  --fs-lg: 17px;
+  --fs-xl: 23px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1416;
+    --surface: #141d20;
+    --ground: #0f1719;
+    --ink: #e4ecec;
+    --ink-2: #a8b7ba;
+    --muted: #8a9a9e;
+    --rule: #263338;
+    --line-vil: #4c5f65;
+    --line-admin: #d4e0e1;
+    --accent: #4fb8c2;
+    --accent-ink: #062226;
+    --d1: #3987e5;
+    --d2: #d95926;
+    --tint: 22%;
+    --tint-hi: 42%;
+    --neutral-fill: #4a5a5f;
+    --shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d1416;
+  --surface: #141d20;
+  --ground: #0f1719;
+  --ink: #e4ecec;
+  --ink-2: #a8b7ba;
+  --muted: #8a9a9e;
+  --rule: #263338;
+  --line-vil: #4c5f65;
+  --line-admin: #d4e0e1;
+  --accent: #4fb8c2;
+  --accent-ink: #062226;
+  --d1: #3987e5;
+  --d2: #d95926;
+  --tint: 22%;
+  --tint-hi: 42%;
+  --neutral-fill: #4a5a5f;
+  --shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+  color-scheme: dark;
+}
+
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: var(--fs-md)/1.6 var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+button, input { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.app {
+  min-height: 100%;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 12px;
+  padding-inline: 16px;
+  padding-block: 14px 16px;
+}
+
+/* ---------- header ---------- */
+.top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 4px 24px;
+}
+.eyebrow {
+  margin: 0;
+  font: 500 var(--fs-xs)/1.4 var(--font-mono);
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+h1 {
+  margin: 2px 0 0;
+  font: 700 var(--fs-xl)/1.2 var(--font-display);
+  letter-spacing: 0.06em;
+  text-wrap: balance;
+}
+.facts {
+  margin: 0;
+  font: var(--fs-xs)/1.5 var(--font-mono);
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- main grid ---------- */
+.main {
+  display: grid;
+  gap: 14px;
+  min-height: 0;
+}
+.mapframe {
+  position: relative;
+  height: clamp(340px, 62vh, 640px);
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  min-width: 0;
+}
+.aside { min-width: 0; }
+
+@media (min-width: 960px) {
+  .app { height: 100%; }
+  .main { grid-template-columns: minmax(0, 1fr) 380px; }
+  .mapframe { height: auto; min-height: 0; }
+  .aside { overflow-y: auto; padding-right: 4px; }
+}
+
+/* ---------- map svg ---------- */
+#map {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+}
+#map.dragging { cursor: grabbing; }
+#map:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
+.ground { fill: var(--ground); }
+.neatline { fill: none; stroke: var(--line-admin); stroke-width: 1; }
+
+.vil {
+  stroke: var(--line-vil);
+  stroke-width: 0.7;
+  vector-effect: non-scaling-stroke;
+  stroke-linejoin: round;
+  cursor: pointer;
+}
+.vil.d0 { fill: color-mix(in srgb, var(--d1) var(--tint), var(--surface)); }
+.vil.d1 { fill: color-mix(in srgb, var(--d2) var(--tint), var(--surface)); }
+.vil.d0.is-hot, .vil.d0.is-sel { fill: color-mix(in srgb, var(--d1) var(--tint-hi), var(--surface)); }
+.vil.d1.is-hot, .vil.d1.is-sel { fill: color-mix(in srgb, var(--d2) var(--tint-hi), var(--surface)); }
+#map.no-fill .vil { fill: var(--surface); }
+#map.no-fill .vil.is-hot, #map.no-fill .vil.is-sel { fill: color-mix(in srgb, var(--ink) 8%, var(--surface)); }
+#map.no-vline .vil { stroke: none; }
+
+.dist {
+  fill: none;
+  stroke: var(--line-admin);
+  stroke-width: 1.8;
+  vector-effect: non-scaling-stroke;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+.hover-outline, .sel-outline {
+  fill: none;
+  vector-effect: non-scaling-stroke;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+.hover-outline { stroke: var(--ink-2); stroke-width: 1.4; }
+.sel-outline { stroke: var(--ink); stroke-width: 2.6; }
+
+.vlabel, .dlabel {
+  paint-order: stroke;
+  stroke: var(--surface);
+  stroke-linejoin: round;
+  text-anchor: middle;
+  dominant-baseline: central;
+  pointer-events: none;
+}
+.vlabel {
+  font: 500 var(--fs-xs) var(--font-body);
+  fill: var(--ink-2);
+  stroke-width: 3px;
+}
+.vlabel.is-sel { font-weight: 700; fill: var(--ink); font-size: var(--fs-sm); }
+.dlabel {
+  font: 700 16px var(--font-display);
+  letter-spacing: 0.4em;
+  fill: var(--ink);
+  stroke-width: 4px;
+}
+.tick { stroke: var(--line-admin); stroke-width: 1; }
+.ticklabel {
+  font: 10px var(--font-mono);
+  fill: var(--muted);
+  text-anchor: middle;
+  font-variant-numeric: tabular-nums;
+}
+.sb-a { fill: var(--ink); }
+.sb-b { fill: var(--surface); }
+.sb-frame { fill: none; stroke: var(--ink); stroke-width: 1; }
+.sb-label {
+  font: 10px var(--font-mono);
+  fill: var(--ink);
+  text-anchor: middle;
+  paint-order: stroke;
+  stroke: var(--surface);
+  stroke-width: 3px;
+}
+.north-a { fill: var(--ink); }
+.north-b { fill: var(--surface); stroke: var(--ink); stroke-width: 1; }
+.north-n { font: 700 11px var(--font-mono); fill: var(--ink); text-anchor: middle; }
+
+/* ---------- map overlays ---------- */
+.map-ctrl {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: grid;
+  gap: 4px;
+}
+.map-ctrl button {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  color: var(--ink);
+  cursor: pointer;
+  font: 500 18px/1 var(--font-mono);
+}
+.map-ctrl button:hover { background: var(--bg); }
+.map-ctrl svg { width: 16px; height: 16px; }
+.coord {
+  position: absolute;
+  right: 16px;
+  bottom: 32px;
+  padding: 2px 6px;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  font: var(--fs-xs)/1.4 var(--font-mono);
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+.tip {
+  position: fixed;
+  z-index: 10;
+  max-width: 260px;
+  padding: 7px 10px;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  box-shadow: var(--shadow);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+  pointer-events: none;
+}
+.tip b { font-size: var(--fs-md); }
+.tip .en { color: var(--muted); }
+.tip .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+/* ---------- reference column ---------- */
+.aside section {
+  padding-block: 14px;
+  border-top: 1px solid var(--rule);
+}
+.aside section:first-child { border-top: 0; padding-top: 2px; }
+h2 {
+  margin: 0 0 10px;
+  font: 700 var(--fs-md)/1.4 var(--font-body);
+  letter-spacing: 0.04em;
+  text-wrap: balance;
+}
+.sub { margin: -6px 0 12px; font-size: var(--fs-sm); color: var(--ink-2); }
+.note { margin: 10px 0 0; font-size: var(--fs-xs); color: var(--muted); line-height: 1.6; }
+.num, .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.nowrap { white-space: nowrap; }
+
+/* legend */
+.legend { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.legend-dist {
+  display: grid;
+  grid-template-columns: 22px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 6px 8px;
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  text-align: left;
+  cursor: pointer;
+}
+.legend-dist:hover { background: var(--surface); }
+.legend-dist .nm { font-weight: 700; }
+.legend-dist .en { margin-left: 6px; font-size: var(--fs-xs); color: var(--muted); }
+.legend-dist .meta { font-size: var(--fs-xs); color: var(--ink-2); }
+.swatch {
+  width: 22px;
+  height: 16px;
+  border: 1.5px solid var(--line-admin);
+}
+.swatch.d0 { background: color-mix(in srgb, var(--d1) var(--tint), var(--surface)); }
+.swatch.d1 { background: color-mix(in srgb, var(--d2) var(--tint), var(--surface)); }
+.legend-lines {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 18px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--fs-sm);
+  color: var(--ink-2);
+}
+.legend-lines li { display: flex; align-items: center; gap: 8px; }
+.line-key { width: 26px; height: 0; border-top: 2px solid var(--line-admin); }
+.line-key.thin { border-top: 1px solid var(--line-vil); }
+.toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin-top: 12px;
+  font-size: var(--fs-sm);
+}
+.toggles label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.toggles input { accent-color: var(--accent); width: 15px; height: 15px; margin: 0; }
+
+/* lookup */
+.search { display: flex; gap: 6px; }
+.search input {
+  flex: 1;
+  min-width: 0;
+  padding: 7px 10px;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+}
+.search button {
+  padding: 7px 14px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  border: 0;
+  border-radius: 2px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.search-msg { margin: 6px 0 0; font-size: var(--fs-xs); color: var(--ink-2); min-height: 1em; }
+.sel-card { margin-top: 8px; }
+.hint { margin: 0; font-size: var(--fs-sm); color: var(--muted); }
+.sel-head { display: flex; align-items: flex-start; gap: 10px; }
+.sel-head .swatch { margin-top: 6px; flex: none; }
+.sel-head h3 { margin: 0; font: 700 var(--fs-lg)/1.3 var(--font-display); letter-spacing: 0.06em; }
+.sel-head .en { margin: 0; font-size: var(--fs-xs); color: var(--muted); }
+.sel-head .clear {
+  margin-left: auto;
+  padding: 2px 8px;
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  font-size: var(--fs-xs);
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.kv {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 14px;
+  margin: 10px 0 0;
+  font-size: var(--fs-sm);
+}
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; }
+
+/* plan land-use chart */
+.split { display: flex; gap: 2px; height: 14px; }
+.split span { display: block; height: 100%; }
+.split .zones { background: var(--accent); border-radius: 4px 0 0 4px; }
+.split .pub { background: var(--neutral-fill); border-radius: 0 4px 4px 0; }
+.split-legend {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 8px 0 14px;
+  padding: 0;
+  list-style: none;
+  font-size: var(--fs-sm);
+}
+.split-legend li { display: grid; grid-template-columns: 10px 1fr; gap: 0 6px; align-items: baseline; }
+.split-legend .key { width: 10px; height: 10px; border-radius: 2px; }
+.split-legend .v { grid-column: 2; color: var(--ink-2); font-size: var(--fs-xs); }
+.zbars { display: grid; gap: 2px; font-size: var(--fs-sm); }
+.zrow {
+  display: grid;
+  grid-template-columns: 7.6em minmax(0, 1fr) 3.6em 3.6em;
+  align-items: center;
+  gap: 8px;
+  padding-block: 3px;
+}
+.zrow.zhead { font-size: var(--fs-xs); color: var(--muted); padding-block: 0 2px; }
+.zrow .r { text-align: right; }
+.ztrack { position: relative; height: 10px; }
+.zbar {
+  height: 100%;
+  min-width: 2px;
+  background: var(--accent);
+  border-radius: 0 4px 4px 0;
+}
+.zrow:not(.zhead):hover { background: color-mix(in srgb, var(--accent) 7%, transparent); }
+
+/* projects */
+.projects { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+.projects li { display: grid; gap: 2px; }
+.p-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; }
+.p-head h3 { margin: 0; font-size: var(--fs-md); font-weight: 700; }
+.p-en { margin: 0; font-size: var(--fs-xs); color: var(--muted); }
+.p-status { margin: 2px 0 0; font-size: var(--fs-sm); }
+.p-fig { margin: 0; font-size: var(--fs-sm); color: var(--ink-2); }
+.p-src { margin: 0; font-size: var(--fs-xs); color: var(--muted); }
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 8px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  font-size: var(--fs-xs);
+  line-height: 1.7;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+.chip::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }
+.chip.open::before { background: var(--good); }
+.chip.pending::before { background: var(--warn); }
+
+.sources { margin: 0; padding-left: 1.1em; font-size: var(--fs-xs); color: var(--ink-2); display: grid; gap: 6px; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+</style>
+
+<div class="app" lang="zh-Hant-TW">
+  <header class="top">
+    <div>
+      <p class="eyebrow">TAICHUNG｜臺中市・水湳周邊脈絡圖層</p>
+      <h1>西屯・北屯基本圖</h1>
+    </div>
+    <p class="facts" id="facts"></p>
+  </header>
+
+  <main class="main">
+    <div class="mapframe" id="mapframe">
+      <svg id="map" tabindex="0" role="img" aria-label="臺中市西屯區與北屯區的區界與里界地圖。可拖曳平移、滾輪或雙指縮放，方向鍵平移，加減號縮放，0回到全圖。">
+        <defs><clipPath id="clip"><rect id="cliprect"></rect></clipPath></defs>
+        <rect class="ground" id="groundrect"></rect>
+        <g clip-path="url(#clip)">
+          <g id="world">
+            <g id="g-v"></g>
+            <g id="g-d"></g>
+            <path class="hover-outline" id="hover-outline"></path>
+            <path class="sel-outline" id="sel-outline"></path>
+          </g>
+          <g id="g-labels"></g>
+        </g>
+        <rect class="neatline" id="neatline"></rect>
+        <g id="g-ticks"></g>
+        <g id="g-north"></g>
+        <g id="g-scale"></g>
+      </svg>
+      <div class="map-ctrl">
+        <button type="button" id="zin" aria-label="放大">+</button>
+        <button type="button" id="zout" aria-label="縮小">−</button>
+        <button type="button" id="zfit" aria-label="回到全圖">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+        </button>
+      </div>
+      <div class="coord" id="coord" hidden></div>
+    </div>
+
+    <aside class="aside">
+      <section aria-labelledby="h-legend">
+        <h2 id="h-legend">圖例</h2>
+        <ul class="legend" id="legend"></ul>
+        <ul class="legend-lines">
+          <li><span class="line-key"></span>區界</li>
+          <li><span class="line-key thin"></span>里界</li>
+        </ul>
+        <div class="toggles" role="group" aria-label="圖層">
+          <label><input type="checkbox" id="lyr-fill" checked>區底色</label>
+          <label><input type="checkbox" id="lyr-vline" checked>里界</label>
+          <label><input type="checkbox" id="lyr-vlabel" checked>里名</label>
+        </div>
+        <p class="note">點選圖例中的行政區可定位；里名會隨縮放比例自動顯示。</p>
+      </section>
+
+      <section aria-labelledby="h-find">
+        <h2 id="h-find">查詢里別</h2>
+        <form class="search" id="search-form" autocomplete="off">
+          <label for="vsearch" hidden>里名</label>
+          <input id="vsearch" list="vlist" placeholder="輸入里名，例如：港尾里">
+          <datalist id="vlist"></datalist>
+          <button type="submit">定位</button>
+        </form>
+        <p class="search-msg" id="search-msg" role="status"></p>
+        <div class="sel-card" id="sel-card" aria-live="polite">
+          <p class="hint">點選地圖上的任一里，或在上方輸入里名，即可查看面積與代碼。</p>
+        </div>
+      </section>
+
+      <section aria-labelledby="h-zoning">
+        <h2 id="h-zoning">水湳機場原址細部計畫：土地使用面積</h2>
+        <p class="sub" id="zoning-sub"></p>
+        <div class="split" id="split" role="img"></div>
+        <ul class="split-legend" id="split-legend"></ul>
+        <div class="zbars" id="zbars" role="table" aria-label="土地使用分區面積"></div>
+        <p class="note">長條依面積等比例繪製；占比為占計畫總面積之百分比。</p>
+      </section>
+
+      <section aria-labelledby="h-proj">
+        <h2 id="h-proj">園區重大建設進度</h2>
+        <ul class="projects" id="projects"></ul>
+        <p class="note">此表未附座標，因此尚未標示在地圖上。</p>
+      </section>
+
+      <section aria-labelledby="h-src">
+        <h2 id="h-src">資料說明</h2>
+        <ul class="sources" id="sources"></ul>
+      </section>
+    </aside>
+  </main>
+</div>
+<div class="tip" id="tip" hidden></div>
+
+<script>
+(() => {
+  const DATA = /*__DATA__*/null;
+
+  const $ = (s) => document.querySelector(s);
+  const NS = "http://www.w3.org/2000/svg";
+  const svgEl = (tag, attrs, parent) => {
+    const el = document.createElementNS(NS, tag);
+    for (const k in attrs) el.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(el);
+    return el;
+  };
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const clean = (s) => String(s ?? "").replace(/\s+/g, " ").trim();
+  const fmt = (n, d = 2) => n.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // ---------- projection ----------
+  // Local equirectangular projection in metres, centred on the study area.
+  // Over this ~22 km x 7 km extent the scale error is well under 0.1%.
+  const rings = (g) => (g.type === "Polygon" ? [g.coordinates] : g.coordinates);
+  let minLon = Infinity, maxLon = -Infinity, minLat = Infinity, maxLat = -Infinity;
+  for (const f of DATA.districts.features) {
+    for (const poly of rings(f.geometry)) for (const ring of poly) for (const [lon, lat] of ring) {
+      if (lon < minLon) minLon = lon; if (lon > maxLon) maxLon = lon;
+      if (lat < minLat) minLat = lat; if (lat > maxLat) maxLat = lat;
+    }
+  }
+  const LON0 = (minLon + maxLon) / 2, LAT0 = (minLat + maxLat) / 2;
+  const RAD = Math.PI / 180;
+  const MLAT = 111132.92 - 559.82 * Math.cos(2 * LAT0 * RAD) + 1.175 * Math.cos(4 * LAT0 * RAD);
+  const MLON = 111412.84 * Math.cos(LAT0 * RAD) - 93.5 * Math.cos(3 * LAT0 * RAD);
+  const proj = (lon, lat) => [(lon - LON0) * MLON, (LAT0 - lat) * MLAT];
+  const unproj = (x, y) => [LON0 + x / MLON, LAT0 - y / MLAT];
+
+  const geomPath = (g) => rings(g).map((poly) => poly.map((ring) => ring.map(([lon, lat], i) => {
+    const [x, y] = proj(lon, lat);
+    return (i ? "L" : "M") + x.toFixed(1) + " " + y.toFixed(1);
+  }).join("") + "Z").join("")).join("");
+  const geomBox = (g) => {
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (const poly of rings(g)) for (const ring of poly) for (const [lon, lat] of ring) {
+      const [x, y] = proj(lon, lat);
+      if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
+    }
+    return [x0, y0, x1, y1];
+  };
+
+  // ---------- model ----------
+  const districts = DATA.districts.features.map((f, i) => {
+    const p = f.properties;
+    const [lx, ly] = proj(p.label_lon, p.label_lat);
+    return { p, i, d: geomPath(f.geometry), box: geomBox(f.geometry), lx, ly };
+  });
+  const distByCode = new Map(districts.map((d) => [d.p.district_code, d]));
+  const villages = DATA.villages.features.map((f) => {
+    const p = f.properties;
+    const dist = distByCode.get(p.district_code);
+    const [lx, ly] = proj(p.label_lon, p.label_lat);
+    return {
+      p, dist,
+      name: clean(p.village_zh), en: clean(p.village_en),
+      d: geomPath(f.geometry), box: geomBox(f.geometry), lx, ly,
+      side: Math.sqrt(p.area_km2 * 1e6),
+      need: [...clean(p.village_zh)].length * 11 + 10,
+    };
+  });
+  for (const d of districts) {
+    const mine = villages.filter((v) => v.dist === d).sort((a, b) => b.p.area_km2 - a.p.area_km2);
+    mine.forEach((v, i) => { v.rank = i + 1; v.of = mine.length; });
+  }
+  const totalBox = districts.reduce((b, d) => [Math.min(b[0], d.box[0]), Math.min(b[1], d.box[1]), Math.max(b[2], d.box[2]), Math.max(b[3], d.box[3])], [Infinity, Infinity, -Infinity, -Infinity]);
+  const totalArea = districts.reduce((s, d) => s + d.p.area_km2, 0);
+
+  $("#facts").textContent =
+    `${districts.length}個行政區・${villages.length}里・${fmt(totalArea)} km²｜WGS84經緯度`;
+
+  // ---------- svg scaffolding ----------
+  const svg = $("#map");
+  const frame = $("#mapframe");
+  const gWorld = $("#world"), gV = $("#g-v"), gD = $("#g-d"), gLabels = $("#g-labels");
+  const gTicks = $("#g-ticks"), gNorth = $("#g-north"), gScale = $("#g-scale");
+  const hoverOutline = $("#hover-outline"), selOutline = $("#sel-outline");
+  const tip = $("#tip"), coord = $("#coord");
+  const M = { l: 22, r: 8, t: 8, b: 22 }; // margin outside the neatline, for coordinate labels
+
+  for (const v of villages) {
+    v.el = svgEl("path", { d: v.d, class: "vil d" + v.dist.i }, gV);
+    v.el.__v = v;
+  }
+  for (const d of districts) svgEl("path", { d: d.d, class: "dist" }, gD);
+  for (const d of districts) {
+    d.labelEl = svgEl("text", { class: "dlabel" }, gLabels);
+    d.labelEl.textContent = d.p.district_zh;
+  }
+  for (const v of villages) {
+    v.labelEl = svgEl("text", { class: "vlabel" }, gLabels);
+    v.labelEl.textContent = v.name;
+  }
+
+  // ---------- view state ----------
+  let W = 0, H = 0, fitK = 1, kMin = 0.5, kMax = 10;
+  let view = { k: 1, tx: 0, ty: 0 };
+  let interacted = false;
+  let selected = null, hot = null;
+  const layers = { fill: true, vline: true, vlabel: true };
+
+  const inner = () => ({ x0: M.l, y0: M.t, x1: W - M.r, y1: H - M.b });
+  function fitView(box, pad, cap, clamp = true) {
+    const r = inner();
+    const iw = r.x1 - r.x0, ih = r.y1 - r.y0;
+    const bw = Math.max(box[2] - box[0], 1), bh = Math.max(box[3] - box[1], 1);
+    let k = Math.min((iw - 2 * pad) / bw, (ih - 2 * pad) / bh);
+    if (cap) k = Math.min(k, cap);
+    if (clamp) k = Math.max(kMin, Math.min(kMax, k));
+    const cx = (box[0] + box[2]) / 2, cy = (box[1] + box[3]) / 2;
+    return { k, tx: (r.x0 + r.x1) / 2 - k * cx, ty: (r.y0 + r.y1) / 2 - k * cy };
+  }
+
+  function resize() {
+    const rect = svg.getBoundingClientRect();
+    const oldW = W, oldH = H;
+    W = Math.max(rect.width, 1); H = Math.max(rect.height, 1);
+    svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+    const r = inner();
+    for (const id of ["#cliprect", "#groundrect", "#neatline"]) {
+      const el = $(id);
+      el.setAttribute("x", r.x0); el.setAttribute("y", r.y0);
+      el.setAttribute("width", r.x1 - r.x0); el.setAttribute("height", r.y1 - r.y0);
+    }
+    // zoom limits are relative to the full-extent fit, so compute that unclamped first
+    const prevFit = fitK;
+    fitK = fitView(totalBox, 18, null, false).k;
+    kMin = fitK * 0.6; kMax = fitK * 16;
+    if (!interacted || !oldW) {
+      view = fitView(totalBox, 18);
+    } else {
+      // keep the same world point at the centre, keep relative zoom
+      const cx = (oldW / 2 - view.tx) / view.k, cy = (oldH / 2 - view.ty) / view.k;
+      const k = view.k * (fitK / prevFit);
+      view = { k, tx: W / 2 - k * cx, ty: H / 2 - k * cy };
+    }
+    drawNorth();
+    draw();
+  }
+
+  function draw() {
+    const { k, tx, ty } = view;
+    gWorld.setAttribute("transform", `matrix(${k} 0 0 ${k} ${tx} ${ty})`);
+    const showDistLabels = k < fitK * 2.4;
+    for (const d of districts) {
+      d.labelEl.style.display = showDistLabels ? "" : "none";
+      if (showDistLabels) {
+        d.labelEl.setAttribute("x", k * d.lx + tx);
+        d.labelEl.setAttribute("y", k * d.ly + ty);
+      }
+    }
+    for (const v of villages) {
+      const isSel = v === selected;
+      const vis = isSel || (layers.vlabel && v.side * k > v.need);
+      v.labelEl.style.display = vis ? "" : "none";
+      v.labelEl.classList.toggle("is-sel", isSel);
+      if (vis) {
+        v.labelEl.setAttribute("x", k * v.lx + tx);
+        v.labelEl.setAttribute("y", k * v.ly + ty);
+      }
+    }
+    drawTicks();
+    drawScale();
+  }
+
+  // ---------- map furniture ----------
+  const dmsLabel = (minutes) => {
+    const total = Math.round(minutes * 100) / 100;
+    const deg = Math.floor(total / 60 + 1e-9);
+    const m = Math.round((total - deg * 60) * 100) / 100;
+    return `${deg}°${String(m).padStart(2, "0")}′`;
+  };
+  function drawTicks() {
+    gTicks.replaceChildren();
+    const { k, tx, ty } = view;
+    const r = inner();
+    const steps = [0.25, 0.5, 1, 2, 5, 10, 15, 30]; // arc-minutes
+    const pick = (pxPerMin) => steps.find((s) => s * pxPerMin >= 74) ?? 30;
+    const sLon = pick((k * MLON) / 60), sLat = pick((k * MLAT) / 60);
+
+    const lonA = unproj((r.x0 - tx) / k, 0)[0] * 60, lonB = unproj((r.x1 - tx) / k, 0)[0] * 60;
+    for (let i = Math.ceil(lonA / sLon); i * sLon <= lonB; i++) {
+      const m = i * sLon;
+      const x = k * proj(m / 60, LAT0)[0] + tx;
+      svgEl("line", { class: "tick", x1: x, x2: x, y1: r.y1, y2: r.y1 - 5 }, gTicks);
+      svgEl("line", { class: "tick", x1: x, x2: x, y1: r.y0, y2: r.y0 + 5 }, gTicks);
+      if (x - r.x0 > 28 && r.x1 - x > 28) {
+        svgEl("text", { class: "ticklabel", x, y: H - 7 }, gTicks).textContent = dmsLabel(m);
+      }
+    }
+    const latTop = unproj(0, (r.y0 - ty) / k)[1] * 60, latBot = unproj(0, (r.y1 - ty) / k)[1] * 60;
+    for (let i = Math.ceil(latBot / sLat); i * sLat <= latTop; i++) {
+      const m = i * sLat;
+      const y = k * proj(LON0, m / 60)[1] + ty;
+      svgEl("line", { class: "tick", x1: r.x0, x2: r.x0 + 5, y1: y, y2: y }, gTicks);
+      svgEl("line", { class: "tick", x1: r.x1, x2: r.x1 - 5, y1: y, y2: y }, gTicks);
+      if (y - r.y0 > 30 && r.y1 - y > 30) {
+        const t = svgEl("text", { class: "ticklabel", x: r.x0 - 8, y, transform: `rotate(-90 ${r.x0 - 8} ${y})` }, gTicks);
+        t.textContent = dmsLabel(m);
+      }
+    }
+  }
+
+  function drawScale() {
+    gScale.replaceChildren();
+    const target = 120 / view.k; // metres spanned by ~120 px
+    const nice = [50, 100, 200, 250, 500, 1000, 2000, 2500, 5000, 10000];
+    let len = nice[0];
+    for (const n of nice) if (n <= target) len = n;
+    const px = len * view.k;
+    const r = inner();
+    const x0 = r.x0 + 14, y0 = r.y1 - 16;
+    svgEl("rect", { class: "sb-a", x: x0, y: y0, width: px / 2, height: 5 }, gScale);
+    svgEl("rect", { class: "sb-b", x: x0 + px / 2, y: y0, width: px / 2, height: 5 }, gScale);
+    svgEl("rect", { class: "sb-frame", x: x0, y: y0, width: px, height: 5 }, gScale);
+    const km = len >= 1000;
+    const val = (m) => (km ? String(m / 1000) : String(m));
+    svgEl("text", { class: "sb-label", x: x0, y: y0 - 6 }, gScale).textContent = "0";
+    svgEl("text", { class: "sb-label", x: x0 + px / 2, y: y0 - 6 }, gScale).textContent = val(len / 2);
+    svgEl("text", { class: "sb-label", x: x0 + px, y: y0 - 6 }, gScale).textContent = val(len) + (km ? " km" : " m");
+  }
+
+  function drawNorth() {
+    gNorth.replaceChildren();
+    const r = inner();
+    const g = svgEl("g", { transform: `translate(${r.x0 + 22} ${r.y0 + 34})`, "aria-hidden": "true" }, gNorth);
+    svgEl("path", { class: "north-b", d: "M0 -12 L7 8 L0 3 Z" }, g);
+    svgEl("path", { class: "north-a", d: "M0 -12 L-7 8 L0 3 Z" }, g);
+    svgEl("text", { class: "north-n", x: 0, y: -17 }, g).textContent = "N";
+  }
+
+  // ---------- view changes ----------
+  let anim = 0;
+  function setView(next, animate) {
+    cancelAnimationFrame(anim);
+    next.k = Math.max(kMin, Math.min(kMax, next.k));
+    if (!animate || reduceMotion) { view = next; draw(); return; }
+    const from = { ...view }, t0 = performance.now(), dur = 340;
+    const step = (now) => {
+      const t = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - t, 3);
+      // interpolate zoom geometrically so the motion feels even
+      const k = from.k * Math.pow(next.k / from.k, e);
+      const cx0 = (W / 2 - from.tx) / from.k, cy0 = (H / 2 - from.ty) / from.k;
+      const cx1 = (W / 2 - next.tx) / next.k, cy1 = (H / 2 - next.ty) / next.k;
+      const cx = cx0 + (cx1 - cx0) * e, cy = cy0 + (cy1 - cy0) * e;
+      view = { k, tx: W / 2 - k * cx, ty: H / 2 - k * cy };
+      draw();
+      if (t < 1) anim = requestAnimationFrame(step);
+    };
+    anim = requestAnimationFrame(step);
+  }
+  function zoomAt(factor, sx, sy, animate) {
+    const k = Math.max(kMin, Math.min(kMax, view.k * factor));
+    const f = k / view.k;
+    interacted = true;
+    setView({ k, tx: sx - (sx - view.tx) * f, ty: sy - (sy - view.ty) * f }, animate);
+  }
+  const zoomCenter = (factor) => zoomAt(factor, (M.l + W - M.r) / 2, (M.t + H - M.b) / 2, true);
+  const resetView = () => { interacted = false; setView(fitView(totalBox, 18), true); };
+
+  $("#zin").addEventListener("click", () => zoomCenter(1.6));
+  $("#zout").addEventListener("click", () => zoomCenter(1 / 1.6));
+  $("#zfit").addEventListener("click", resetView);
+
+  svg.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    const r = svg.getBoundingClientRect();
+    const unit = e.deltaMode === 1 ? 16 : 1;
+    zoomAt(Math.exp(-e.deltaY * unit * 0.0016), e.clientX - r.left, e.clientY - r.top, false);
+  }, { passive: false });
+
+  svg.addEventListener("keydown", (e) => {
+    const pan = 70;
+    const moves = { ArrowLeft: [pan, 0], ArrowRight: [-pan, 0], ArrowUp: [0, pan], ArrowDown: [0, -pan] };
+    if (moves[e.key]) {
+      e.preventDefault();
+      interacted = true;
+      setView({ k: view.k, tx: view.tx + moves[e.key][0], ty: view.ty + moves[e.key][1] }, false);
+    } else if (e.key === "+" || e.key === "=") { e.preventDefault(); zoomCenter(1.6); }
+    else if (e.key === "-" || e.key === "_") { e.preventDefault(); zoomCenter(1 / 1.6); }
+    else if (e.key === "0") { e.preventDefault(); resetView(); }
+    else if (e.key === "Escape") { select(null); }
+  });
+
+  // ---------- pointer: pan, pinch, hover, click ----------
+  const ptrs = new Map();
+  let drag = null, pinch = null;
+  const local = (e) => { const r = svg.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
+
+  function startPinch() {
+    const [a, b] = [...ptrs.values()];
+    pinch = { d0: Math.hypot(a.x - b.x, a.y - b.y) || 1, mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2, k0: view.k, tx0: view.tx, ty0: view.ty };
+    drag = null;
+  }
+  svg.addEventListener("pointerdown", (e) => {
+    if (e.button !== 0 && e.pointerType === "mouse") return;
+    const p = local(e);
+    ptrs.set(e.pointerId, p);
+    svg.setPointerCapture(e.pointerId);
+    if (ptrs.size === 1) {
+      drag = { x0: p.x, y0: p.y, tx0: view.tx, ty0: view.ty, moved: false, target: e.target };
+    } else if (ptrs.size === 2) {
+      startPinch();
+    }
+  });
+  svg.addEventListener("pointermove", (e) => {
+    const p = local(e);
+    if (ptrs.has(e.pointerId)) ptrs.set(e.pointerId, p);
+    if (pinch && ptrs.size >= 2) {
+      const [a, b] = [...ptrs.values()];
+      const d = Math.hypot(a.x - b.x, a.y - b.y) || 1;
+      const k = Math.max(kMin, Math.min(kMax, pinch.k0 * (d / pinch.d0)));
+      const wx = (pinch.mx - pinch.tx0) / pinch.k0, wy = (pinch.my - pinch.ty0) / pinch.k0;
+      const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+      interacted = true;
+      view = { k, tx: mx - wx * k, ty: my - wy * k };
+      draw();
+      return;
+    }
+    if (drag) {
+      const dx = p.x - drag.x0, dy = p.y - drag.y0;
+      if (!drag.moved && Math.hypot(dx, dy) > 4) { drag.moved = true; svg.classList.add("dragging"); hideTip(); setHot(null); }
+      if (drag.moved) {
+        interacted = true;
+        view = { k: view.k, tx: drag.tx0 + dx, ty: drag.ty0 + dy };
+        draw();
+      }
+      return;
+    }
+    // plain hover (mouse / pen)
+    updateCoord(p);
+    const v = e.target.__v || null;
+    setHot(v);
+    if (v && e.pointerType !== "touch") showVillageTip(v, e.clientX, e.clientY); else hideTip();
+  });
+  const endPointer = (e) => {
+    if (!ptrs.has(e.pointerId)) return;
+    ptrs.delete(e.pointerId);
+    if (drag && !drag.moved && e.type === "pointerup") {
+      const v = drag.target && drag.target.__v;
+      select(v && v !== selected ? v : null);
+    }
+    svg.classList.remove("dragging");
+    if (ptrs.size === 1 && pinch) {
+      const [p] = [...ptrs.values()];
+      drag = { x0: p.x, y0: p.y, tx0: view.tx, ty0: view.ty, moved: true, target: null };
+      pinch = null;
+    } else if (ptrs.size === 0) {
+      drag = null; pinch = null;
+    }
+  };
+  svg.addEventListener("pointerup", endPointer);
+  svg.addEventListener("pointercancel", endPointer);
+  svg.addEventListener("pointerleave", () => { if (!drag) { setHot(null); hideTip(); coord.hidden = true; } });
+
+  function updateCoord(p) {
+    const r = inner();
+    if (p.x < r.x0 || p.x > r.x1 || p.y < r.y0 || p.y > r.y1) { coord.hidden = true; return; }
+    const [lon, lat] = unproj((p.x - view.tx) / view.k, (p.y - view.ty) / view.k);
+    coord.textContent = `${lat.toFixed(5)}°N  ${lon.toFixed(5)}°E`;
+    coord.hidden = false;
+  }
+
+  function setHot(v) {
+    if (v === hot) return;
+    if (hot) hot.el.classList.remove("is-hot");
+    hot = v;
+    if (hot) { hot.el.classList.add("is-hot"); hoverOutline.setAttribute("d", hot.d); }
+    else hoverOutline.removeAttribute("d");
+  }
+
+  // ---------- tooltip ----------
+  function placeTip(cx, cy) {
+    tip.hidden = false;
+    const w = tip.offsetWidth, h = tip.offsetHeight;
+    let x = cx + 14, y = cy + 14;
+    if (x + w > window.innerWidth - 8) x = cx - w - 14;
+    if (y + h > window.innerHeight - 8) y = cy - h - 14;
+    tip.style.left = Math.max(8, x) + "px";
+    tip.style.top = Math.max(8, y) + "px";
+  }
+  function showVillageTip(v, cx, cy) {
+    tip.innerHTML = `<b>${esc(v.name)}</b> <span class="en">${esc(v.en)}</span><br>` +
+      `${esc(v.dist.p.district_zh)}・<span class="num">${fmt(v.p.area_km2)} km²</span>`;
+    placeTip(cx, cy);
+  }
+  const hideTip = () => { tip.hidden = true; };
+
+  // ---------- selection ----------
+  const card = $("#sel-card");
+  const hintHTML = card.innerHTML;
+  function select(v, zoom) {
+    if (selected) selected.el.classList.remove("is-sel");
+    selected = v;
+    if (v) {
+      v.el.classList.add("is-sel");
+      selOutline.setAttribute("d", v.d);
+      const d = v.dist.p;
+      card.innerHTML = `
+        <div class="sel-head">
+          <span class="swatch d${v.dist.i}" aria-hidden="true"></span>
+          <div><h3>${esc(v.name)}</h3><p class="en">${esc(v.en)}</p></div>
+          <button type="button" class="clear" id="sel-clear">取消選取</button>
+        </div>
+        <dl class="kv">
+          <dt>行政區</dt><dd>${esc(d.district_zh)}（${esc(d.district_en)}）</dd>
+          <dt>面積</dt><dd><span class="num">${fmt(v.p.area_km2)} km²</span>（<span class="num">${fmt(v.p.area_km2 * 100, 1)}</span>公頃）</dd>
+          <dt>占行政區</dt><dd><span class="num">${fmt((v.p.area_km2 / d.area_km2) * 100, 1)}%</span></dd>
+          <dt>面積排序</dt><dd>${esc(d.district_zh)}${v.of}里中第<span class="num">${v.rank}</span></dd>
+          <dt>村里代碼</dt><dd class="mono">${esc(v.p.village_code)}</dd>
+        </dl>`;
+      $("#sel-clear").addEventListener("click", () => select(null));
+      if (zoom) {
+        interacted = true;
+        setView(fitView(v.box, 60, fitK * 7), true);
+      } else {
+        draw();
+      }
+    } else {
+      selOutline.removeAttribute("d");
+      card.innerHTML = hintHTML;
+      draw();
+    }
+  }
+
+  // ---------- legend ----------
+  const legend = $("#legend");
+  for (const d of districts) {
+    const li = document.createElement("li");
+    li.innerHTML = `
+      <button type="button" class="legend-dist" aria-label="定位到${esc(d.p.district_zh)}">
+        <span class="swatch d${d.i}" aria-hidden="true"></span>
+        <span><span class="nm">${esc(d.p.district_zh)}</span><span class="en">${esc(d.p.district_en)}</span></span>
+        <span class="meta num">${fmt(d.p.area_km2)} km²・${d.p.village_count}里</span>
+      </button>`;
+    li.querySelector("button").addEventListener("click", () => {
+      interacted = true;
+      setView(fitView(d.box, 24), true);
+    });
+    legend.appendChild(li);
+  }
+  const bindLayer = (id, key, cls) => {
+    $(id).addEventListener("change", (e) => {
+      layers[key] = e.target.checked;
+      if (cls) svg.classList.toggle(cls, !e.target.checked);
+      draw();
+    });
+  };
+  bindLayer("#lyr-fill", "fill", "no-fill");
+  bindLayer("#lyr-vline", "vline", "no-vline");
+  bindLayer("#lyr-vlabel", "vlabel", null);
+
+  // ---------- village lookup ----------
+  const optLabel = (v) => `${v.name}（${v.dist.p.district_zh}）`;
+  const dl = $("#vlist");
+  for (const v of [...villages].sort((a, b) => a.dist.i - b.dist.i || a.name.localeCompare(b.name, "zh-Hant"))) {
+    const o = document.createElement("option");
+    o.value = optLabel(v);
+    dl.appendChild(o);
+  }
+  const msg = $("#search-msg");
+  function findVillage(q) {
+    q = clean(q);
+    if (!q) return null;
+    const exact = villages.find((v) => optLabel(v) === q);
+    if (exact) return exact;
+    const byName = villages.filter((v) => v.name === q || v.name === q + "里" || v.en.toLowerCase() === q.toLowerCase());
+    if (byName.length === 1) return byName[0];
+    const partial = villages.filter((v) => v.name.includes(q) || v.en.toLowerCase().includes(q.toLowerCase()));
+    return partial.length === 1 ? partial[0] : (partial.length ? partial : null);
+  }
+  function runSearch() {
+    const q = $("#vsearch").value;
+    const hit = findVillage(q);
+    if (!hit) { msg.textContent = q.trim() ? `找不到「${clean(q)}」。請輸入里名，例如：港尾里。` : ""; return; }
+    if (Array.isArray(hit)) { msg.textContent = `有${hit.length}個里符合，請從清單選擇：${hit.slice(0, 6).map((v) => v.name).join("、")}${hit.length > 6 ? "…" : ""}`; return; }
+    msg.textContent = "";
+    $("#vsearch").value = optLabel(hit);
+    select(hit, true);
+  }
+  $("#search-form").addEventListener("submit", (e) => { e.preventDefault(); runSearch(); });
+  $("#vsearch").addEventListener("change", () => {
+    if (villages.some((v) => optLabel(v) === $("#vsearch").value)) runSearch();
+  });
+
+  // ---------- plan land-use chart ----------
+  const Z = DATA.zoning;
+  const total = Z.find((z) => z.zh === "計畫面積");
+  const subtotal = Z.find((z) => z.zh === "分區小計");
+  const pub = Z.find((z) => z.zh === "公共設施用地");
+  const zones = Z.filter((z) => ![total, subtotal, pub].includes(z)).sort((a, b) => b.ha - a.ha);
+  const src = (total || Z[0]).source;
+  const dateMatch = src.match(/\d{4}-\d{2}-\d{2}/);
+  $("#zoning-sub").innerHTML =
+    `計畫面積<span class="num">${fmt(total.ha)}</span>公頃｜第二次通盤檢討公開展覽說明會${dateMatch ? `<span class="nowrap">（${dateMatch[0]}）</span>` : ""}`;
+  const split = $("#split");
+  split.setAttribute("aria-label", `土地使用分區${fmt(subtotal.pct)}%，公共設施用地${fmt(pub.pct)}%`);
+  split.innerHTML = `<span class="zones" style="flex:${subtotal.ha} 1 0"></span><span class="pub" style="flex:${pub.ha} 1 0"></span>`;
+  $("#split-legend").innerHTML = `
+    <li><span class="key" style="background:var(--accent)"></span><span>土地使用分區</span><span class="v num">${fmt(subtotal.ha)} ha・${fmt(subtotal.pct)}%</span></li>
+    <li><span class="key" style="background:var(--neutral-fill)"></span><span>公共設施用地</span><span class="v num">${fmt(pub.ha)} ha・${fmt(pub.pct)}%</span></li>`;
+  const maxHa = Math.max(...zones.map((z) => z.ha));
+  const zbars = $("#zbars");
+  zbars.innerHTML =
+    `<div class="zrow zhead" role="row"><span role="columnheader">土地使用分區</span><span role="columnheader" aria-label="面積長條"></span><span class="r" role="columnheader">公頃</span><span class="r" role="columnheader">占比</span></div>` +
+    zones.map((z, i) => `
+      <div class="zrow" role="row" data-i="${i}">
+        <span role="cell">${esc(z.zh)}</span>
+        <span class="ztrack" role="cell" aria-hidden="true"><span class="zbar" style="display:block;width:${(z.ha / maxHa) * 100}%"></span></span>
+        <span class="r num" role="cell">${fmt(z.ha)}</span>
+        <span class="r num" role="cell">${fmt(z.pct)}%</span>
+      </div>`).join("");
+  zbars.addEventListener("pointermove", (e) => {
+    const row = e.target.closest(".zrow[data-i]");
+    if (!row) { hideTip(); return; }
+    const z = zones[+row.dataset.i];
+    tip.innerHTML = `<b>${esc(z.zh)}</b><br><span class="en">${esc(z.en)}</span><br>` +
+      `<span class="num">${fmt(z.ha)} ha</span>，占計畫面積<span class="num">${fmt(z.pct)}%</span>，占分區小計<span class="num">${fmt((z.ha / subtotal.ha) * 100, 1)}%</span>`;
+    placeTip(e.clientX, e.clientY);
+  });
+  zbars.addEventListener("pointerleave", hideTip);
+
+  // ---------- projects ----------
+  const chip = { open: ["open", "已啟用"], pending: ["pending", "推動中"], unknown: ["", "狀態未分類"] };
+  $("#projects").innerHTML = DATA.projects.map((p) => {
+    const [cls, label] = chip[p.phase] || chip.unknown;
+    return `
+      <li>
+        <div class="p-head"><h3>${esc(p.zh)}</h3><span class="chip ${cls}">${label}</span></div>
+        <p class="p-en">${esc(p.en)}</p>
+        <p class="p-status">${esc(p.status_zh)}</p>
+        ${p.key_figures_zh ? `<p class="p-fig">${esc(p.key_figures_zh)}</p>` : ""}
+        <p class="p-src">來源：${esc(p.source)}</p>
+      </li>`;
+  }).join("");
+
+  // ---------- sources ----------
+  $("#sources").innerHTML = [
+    `區界與里界：${esc(DATA.boundary_source)}`,
+    `邊界為簡化版本（${villages.length}里合計約${DATA.villages.features.reduce((s, f) => s + rings(f.geometry).flat().reduce((t, r) => t + r.length, 0), 0)}個頂點），適合示意與脈絡判讀，不宜用於量測或精確套疊；面積數值取自資料屬性欄位。`,
+    `土地使用面積：${esc(src)}`,
+    `重大建設進度：各列來源如上；中文狀態為英文原欄位的翻譯。`,
+    `座標系統：WGS84經緯度（CRS84）。地圖以研究區中心做等距圓柱投影，比例尺於本範圍內誤差小於0.1%。`,
+  ].map((t) => `<li>${t}</li>`).join("");
+
+  // ---------- boot ----------
+  new ResizeObserver(() => resize()).observe(frame);
+  resize();
+})();
+</script>
