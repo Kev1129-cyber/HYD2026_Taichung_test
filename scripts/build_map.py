@@ -34,6 +34,8 @@ REFS = RAW / "reference_points.csv"
 PLAN_DXF = RAW / "Figure_7-1_Detailed_Plan_A3_English_CAD.dxf"
 # Georeferenced trace of the detailed plan; regenerate with scripts/georef_plan.py.
 PLAN = ROOT / "data" / "derived" / "shuinan_detailed_plan_traced.geojson"
+# OSM road network; fetched by scripts/fetch_roads.py (the "Fetch OSM road network" workflow). Optional.
+ROADS = ROOT / "data" / "derived" / "roads_osm.geojson"
 
 # Status chip per project, keyed by project_zh in shuinan_major_projects_2026.csv:
 # "open" = opened / in use / in service / existing, "pending" = not yet open.
@@ -51,15 +53,16 @@ PROJECT_PHASE = {
 
 UNOFFICIAL = re.compile(r"\s*\(unofficial translation\)\s*$", re.I)
 
-# Landing-page download table: (file, description).
+# Landing-page download table: (file, English description, Chinese description).
 DOWNLOADS = [
-    (DISTRICTS, "西屯區、北屯區區界"),
-    (VILLAGES, "西屯區、北屯區81個里界"),
-    (ZONING, "水湳機場原址細部計畫土地使用分區面積（2024）"),
-    (PROJECTS, "水湳經貿園區重大建設進度（2026）"),
-    (PLAN, "細部計畫描圖（已概略定位，誤差約100–200公尺）"),
-    (PLAN_DXF, "細部計畫圖英文參考版CAD（A3圖紙座標，未定位）"),
-    (REFS, "參考點座標與出處"),
+    (DISTRICTS, "Xitun and Beitun district boundaries", "西屯區、北屯區區界"),
+    (VILLAGES, "Xitun and Beitun village boundaries (81)", "西屯區、北屯區81個里界"),
+    (ZONING, "Shuinan Airport site detailed plan: land-use areas (2024)", "水湳機場原址細部計畫土地使用分區面積"),
+    (PROJECTS, "Shuinan park major projects and status (2026)", "水湳經貿園區重大建設進度"),
+    (PLAN, "Detailed plan trace, placed approximately (about 100–200 m error)", "細部計畫描圖（概略定位）"),
+    (PLAN_DXF, "Detailed plan, English reference CAD (A3 sheet units, not georeferenced)", "細部計畫圖英文參考版CAD"),
+    (REFS, "Reference point coordinates and sources", "參考點座標與出處"),
+    (ROADS, "Road and rail network from OpenStreetMap (ODbL)", "OSM路網（ODbL授權）"),
 ]
 
 DATE_RE = re.compile(r"\d{4}-\d{2}-\d{2}")
@@ -122,6 +125,7 @@ def load_data():
         "boundary_source": boundary_source,
         "plan": read_json(PLAN),
         "refs": read_csv(REFS),
+        "roads": read_json(ROADS) if ROADS.exists() else None,
     }
 
 
@@ -189,50 +193,54 @@ def thumbnail_svg(data, width=560, pad=6):
              for f in data["villages"]["features"]]
     parts += [f'<path class="dist" d="{path(f["geometry"])}"/>' for f in data["districts"]["features"]]
     return (f'<svg class="thumb" viewBox="0 0 {width} {height:.0f}" role="img" '
-            f'aria-label="西屯區與北屯區的里界輪廓">{"".join(parts)}</svg>')
+            f'aria-label="Outline of the village boundaries in Xitun and Beitun">{"".join(parts)}</svg>')
 
 
 def landing_values(data):
     villages = data["villages"]["features"]
     districts = data["districts"]["features"]
     area = sum(f["properties"]["area_km2"] for f in districts)
-    names = "、".join(f["properties"]["district_zh"] for f in districts)
+    names = " and ".join(f["properties"]["district_en"].replace(" District", "") for f in districts)
 
     m = re.search(r"village boundaries \((\d{4}-\d{2}-\d{2})\)", data["boundary_source"])
-    boundary_date = f"國土測繪中心村里界{m.group(1)}" if m else "國土測繪中心村里界"
+    boundary_date = f"NLSC village boundaries, {m.group(1)}" if m else "NLSC village boundaries"
     zoning_src = data["zoning"][0]["source"]
     zd = DATE_RE.search(zoning_src)
     project_dates = sorted(d for p in data["projects"] for d in DATE_RE.findall(p["source"]))
 
     rows = []
-    for path, desc in DOWNLOADS:
+    for path, en, zh in DOWNLOADS:
+        if not path.exists():
+            continue
         rel = path.relative_to(ROOT).as_posix()
         size_kb = path.stat().st_size / 1024
         rows.append(
             f'<tr><td class="file"><a href="{rel}" download>{html.escape(path.name)}</a>'
             f'<span class="fmt">{path.suffix[1:].upper()}</span></td>'
-            f"<td>{html.escape(desc)}</td>"
+            f'<td>{html.escape(en)}<span class="zh block" lang="zh-Hant-TW">{html.escape(zh)}</span></td>'
             f'<td class="size num">{size_kb:.1f} KB</td></tr>'
         )
 
     sources = [
-        f"區界與里界：{html.escape(data['boundary_source'])}",
-        "邊界為簡化版本，適合示意與脈絡判讀，不宜用於量測或精確套疊。",
-        f"土地使用分區面積：{html.escape(zoning_src)}",
-        "重大建設進度：臺中市政府專案報告與新聞報導，各列來源見CSV的source欄位。",
-        "細部計畫疊圖：由Figure 7-1英文參考版（非官方翻譯）自動描繪的色塊，依分區面積推算比例、"
-        "以綠美圖與中央公園禁飛區公告座標定位，誤差約100–200公尺；以中文計畫書與官方圖資為準。",
-        '底圖：© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors，'
-        '圖磚依<a href="https://operations.osmfoundation.org/policies/tiles/">OSM圖磚使用政策</a>使用。',
+        f"Boundaries: {html.escape(data['boundary_source'])}",
+        "Boundaries are simplified: use them for context, not for measurement or precise overlay.",
+        f"Land-use areas: {html.escape(zoning_src)}",
+        "Major projects: Taichung City Government project reports and news coverage; each row's source is in the CSV.",
+        "Detailed plan overlay: colour patches auto-traced from Figure 7-1 (unofficial English reference), scaled from the "
+        "zone areas and placed with the Green Museumbrary and the Central Park no-fly notices, so expect about "
+        "100–200 m of error. The Chinese plan and official GIS/CAD data prevail.",
+        '<a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors</a>: basemap tiles, used under the '
+        '<a href="https://operations.osmfoundation.org/policies/tiles/">OSM tile usage policy</a>, and the road network '
+        '(Open Database License 1.0), fetched through the Overpass API.',
     ]
 
     return {
         "<!--__THUMB__-->": thumbnail_svg(data),
         "<!--__N_VILLAGES__-->": str(len(villages)),
-        "<!--__EXTENT__-->": f'{html.escape(names)}・{len(villages)}里・<span class="num">{area:.2f}</span> km²',
+        "<!--__EXTENT__-->": f'{html.escape(names)} · {len(villages)} villages · <span class="num">{area:.2f}</span> km²',
         "<!--__BOUNDARY_DATE__-->": boundary_date,
-        "<!--__ZONING_DATE__-->": f"第二次通盤檢討公開展覽說明會{zd.group(0) if zd else ''}",
-        "<!--__PROJECT_DATE__-->": f"資料至{project_dates[-1]}" if project_dates else "",
+        "<!--__ZONING_DATE__-->": f"2nd comprehensive review, public briefing{', ' + zd.group(0) if zd else ''}",
+        "<!--__PROJECT_DATE__-->": f"Sources up to {project_dates[-1]}" if project_dates else "",
         "<!--__DOWNLOADS__-->": "".join(rows),
         "<!--__SOURCES__-->": "".join(f"<li>{s}</li>" for s in sources),
     }
@@ -256,7 +264,7 @@ def main():
     write(MAP_OUT, wrap_page(map_page, "en"))  # English leads; Chinese spans carry lang="zh-Hant-TW"
 
     landing = fill((TEMPLATES / "index.html").read_text(encoding="utf-8"), landing_values(data))
-    write(LANDING_OUT, wrap_page(landing, "zh-Hant-TW"))
+    write(LANDING_OUT, wrap_page(landing, "en"))
 
     if args.fragment:
         fragment = fill(map_template, {

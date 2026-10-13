@@ -555,6 +555,39 @@ h2 .zh.block { margin-top: 3px; }
 .sources { margin: 0; padding-left: 1.1em; font-size: var(--fs-xs); color: var(--ink-2); display: grid; gap: 6px; }
 .sources a { color: inherit; text-underline-offset: 2px; }
 
+/* road network (OSM): one path per class, ink weights by hierarchy */
+.road { fill: none; vector-effect: non-scaling-stroke; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
+.road.motorway { stroke: var(--ink); stroke-width: 4; }
+.road.motorway-in { stroke: var(--surface); stroke-width: 1.6; }
+.road.trunk { stroke: var(--ink); stroke-width: 3; }
+.road.primary { stroke: var(--ink); stroke-width: 2.2; }
+.road.secondary { stroke: var(--ink-2); stroke-width: 1.5; }
+.road.tertiary { stroke: var(--ink-2); stroke-width: 1; }
+.road.link { stroke: var(--ink-2); stroke-width: 1; }
+.road.minor { stroke: var(--muted); stroke-width: 0.6; }
+.road.rail { stroke: var(--ink); stroke-width: 1.3; stroke-dasharray: 7 3; stroke-linecap: butt; }
+.road.metro { stroke: var(--ink); stroke-width: 2; stroke-dasharray: 2 3; stroke-linecap: butt; }
+#map:not(.zoom-detail) .road.minor { display: none; }
+#map.has-tiles .road { stroke-opacity: 0.85; }
+.road-label {
+  font-family: var(--font-body);
+  font-weight: 600;
+  fill: var(--ink);
+  stroke: var(--surface);
+  paint-order: stroke;
+  stroke-linejoin: round;
+  dominant-baseline: central;
+  pointer-events: none;
+}
+.road-label .zh { font-family: var(--font-zh); font-weight: 400; fill: var(--muted); }
+.line-key.road-k { border-top-width: 2px; }
+.line-key.road-motorway { border-top: 4px double var(--ink); height: 4px; }
+.line-key.road-primary { border-top: 2px solid var(--ink); }
+.line-key.road-secondary { border-top: 1.5px solid var(--ink-2); }
+.line-key.road-minor { border-top: 1px solid var(--muted); }
+.line-key.road-metro { border-top: 2px dotted var(--ink); }
+.line-key.road-rail { border-top: 2px dashed var(--ink); }
+
 /* detailed plan overlay + reference points */
 .plan-patch {
   stroke: var(--ink);
@@ -627,13 +660,15 @@ h3.mini .zh { text-transform: none; letter-spacing: 0.02em; }
     <div class="mapframe" id="mapframe">
       <div class="tiles" id="tiles" aria-hidden="true" hidden></div>
       <svg id="map" tabindex="0" role="img" aria-label="Map of district and village boundaries in Xitun and Beitun, Taichung. Drag to pan, scroll or pinch to zoom. Arrow keys pan, plus and minus zoom, 0 shows the full extent.">
-        <defs><clipPath id="clip"><rect id="cliprect"></rect></clipPath></defs>
+        <defs><clipPath id="clip"><rect id="cliprect"></rect></clipPath><g id="road-label-paths"></g></defs>
         <rect class="ground" id="groundrect"></rect>
         <g clip-path="url(#clip)">
           <g id="world">
             <g id="g-v"></g>
             <g id="g-plan"></g>
+            <g id="g-roads"></g>
             <g id="g-d"></g>
+            <g id="g-roadlabels"></g>
             <path class="hover-outline" id="hover-outline"></path>
             <path class="sel-outline" id="sel-outline"></path>
           </g>
@@ -664,11 +699,20 @@ h3.mini .zh { text-transform: none; letter-spacing: 0.02em; }
           <li><span class="line-key"></span>District boundary<span class="zh" lang="zh-Hant-TW">區界</span></li>
           <li><span class="line-key thin"></span>Village boundary<span class="zh" lang="zh-Hant-TW">里界</span></li>
         </ul>
+        <ul class="legend-lines" id="road-legend" hidden>
+          <li><span class="line-key road-motorway"></span>Freeway<span class="zh" lang="zh-Hant-TW">國道、快速道路</span></li>
+          <li><span class="line-key road-primary"></span>Arterial<span class="zh" lang="zh-Hant-TW">主要道路</span></li>
+          <li><span class="line-key road-secondary"></span>Collector<span class="zh" lang="zh-Hant-TW">次要道路</span></li>
+          <li><span class="line-key road-minor"></span>Local street<span class="zh" lang="zh-Hant-TW">巷道（水湳周邊）</span></li>
+          <li><span class="line-key road-metro"></span>Metro<span class="zh" lang="zh-Hant-TW">捷運</span></li>
+          <li><span class="line-key road-rail"></span>Railway<span class="zh" lang="zh-Hant-TW">鐵路</span></li>
+        </ul>
         <div class="toggles" role="group" aria-label="Layers">
           <label id="lyr-osm-wrap" hidden><input type="checkbox" id="lyr-osm" checked>OSM basemap<span class="zh" lang="zh-Hant-TW">底圖</span></label>
           <label><input type="checkbox" id="lyr-fill" checked>District tint<span class="zh" lang="zh-Hant-TW">區底色</span></label>
           <label><input type="checkbox" id="lyr-vline" checked>Village lines<span class="zh" lang="zh-Hant-TW">里界</span></label>
           <label><input type="checkbox" id="lyr-vlabel" checked>Village names<span class="zh" lang="zh-Hant-TW">里名</span></label>
+          <label id="lyr-roads-wrap" hidden><input type="checkbox" id="lyr-roads" checked>Road network<span class="zh" lang="zh-Hant-TW">路網</span></label>
           <label><input type="checkbox" id="lyr-plan" checked>Detailed plan<span class="zh" lang="zh-Hant-TW">細部計畫</span></label>
           <label><input type="checkbox" id="lyr-refs" checked>Reference points<span class="zh" lang="zh-Hant-TW">參考點</span></label>
         </div>
@@ -947,6 +991,8 @@ h3.mini .zh { text-transform: none; letter-spacing: 0.02em; }
       v.labelEl.classList.toggle("is-sel", isSel);
       if (vis) placeLabel(v.labelEl, sx, sy, isSel ? 7 : 6, isSel ? 8 : 7);
     }
+    svg.classList.toggle("zoom-detail", k > fitK * 2.5);
+    drawRoadLabels();
     drawRefs();
     drawTicks();
     drawScale();
@@ -1087,7 +1133,7 @@ h3.mini .zh { text-transform: none; letter-spacing: 0.02em; }
     $("#lyr-osm").checked = on;
     svg.classList.toggle("has-tiles", on);
     tilesDiv.hidden = !on;
-    attrib.hidden = !on;
+    attrib.hidden = !on && !(DATA.roads && $("#lyr-roads").checked);
     if (!on) clearTiles();
     if (redraw) draw();
   }
@@ -1340,6 +1386,84 @@ h3.mini .zh { text-transform: none; letter-spacing: 0.02em; }
   bindLayer("#lyr-vline", "vline", "no-vline");
   bindLayer("#lyr-vlabel", "vlabel", null);
 
+  // ---------- road network (OpenStreetMap, fetched by scripts/fetch_roads.py) ----------
+  const ROADS = DATA.roads;
+  const gRoads = $("#g-roads"), gRoadLabels = $("#g-roadlabels"), roadPathDefs = $("#road-label-paths");
+  const lineD = (coords) => coords.map(([lon, lat], i) => {
+    const [x, y] = proj(lon, lat);
+    return (i ? "L" : "M") + x.toFixed(1) + " " + y.toFixed(1);
+  }).join("");
+  const roadLabels = [];
+  if (ROADS) {
+    $("#lyr-roads-wrap").hidden = false;
+    $("#road-legend").hidden = false;
+    // one <path> per class keeps thousands of ways cheap to pan and zoom
+    const CLASS = { motorway: "motorway", trunk: "trunk", primary: "primary", secondary: "secondary", tertiary: "tertiary", minor: "minor", rail: "rail", metro: "metro" };
+    const byClass = {};
+    for (const f of ROADS.features) {
+      const kind = f.properties.kind;
+      const cls = kind.endsWith("_link") ? "link" : CLASS[kind] || "minor";
+      (byClass[cls] = byClass[cls] || []).push(lineD(f.geometry.coordinates));
+    }
+    for (const cls of ["minor", "tertiary", "link", "secondary", "primary", "trunk", "motorway", "rail", "metro"]) {
+      if (!byClass[cls]) continue;
+      const d = byClass[cls].join("");
+      svgEl("path", { class: "road " + cls, d }, gRoads);
+      if (cls === "motorway") svgEl("path", { class: "road motorway-in", d }, gRoads);
+    }
+    // labels: the longest way of each named arterial or collector, set left to right along the line
+    const abbr = (n) => {
+      const m = n.match(/^Section (\d+),\s*(.+)$/i);
+      const base = (m ? m[2] : n).replace(/\bRoad\b/g, "Rd").replace(/\bStreet\b/g, "St").replace(/\bBoulevard\b/g, "Blvd").replace(/\bAvenue\b/g, "Ave");
+      return m ? `${base} Sec. ${m[1]}` : base;
+    };
+    const best = new Map();
+    for (const f of ROADS.features) {
+      const pr = f.properties;
+      if (!["motorway", "trunk", "primary", "secondary"].includes(pr.kind)) continue;
+      const key = pr.name || pr.ref;
+      if (!key) continue;
+      const pts = f.geometry.coordinates.map(([lon, lat]) => proj(lon, lat));
+      let len = 0;
+      for (let i = 1; i < pts.length; i++) len += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
+      const prev = best.get(key);
+      if (!prev || len > prev.len) best.set(key, { pr, pts, len });
+    }
+    let n = 0;
+    for (const { pr, pts, len } of best.values()) {
+      if (pts[pts.length - 1][0] < pts[0][0]) pts.reverse(); // keep text upright
+      const id = `rlp${n++}`;
+      svgEl("path", { id, d: pts.map(([x, y], i) => (i ? "L" : "M") + x.toFixed(1) + " " + y.toFixed(1)).join("") }, roadPathDefs);
+      const text = svgEl("text", { class: "road-label" }, gRoadLabels);
+      const tp = svgEl("textPath", { href: `#${id}`, startOffset: "50%", "text-anchor": "middle" }, text);
+      const en = pr.name_en ? abbr(pr.name_en) : "";
+      if (en) svgEl("tspan", {}, tp).textContent = en;
+      if (pr.name) {
+        const z = svgEl("tspan", { class: "zh", lang: "zh-Hant-TW", dx: en ? "0.4em" : "0" }, tp);
+        z.textContent = pr.name;
+      } else if (!en) {
+        svgEl("tspan", {}, tp).textContent = pr.ref;
+      }
+      // rough on-screen width of the label in px at 11px type
+      const need = (en.length * 6.2 + (pr.name || "").length * 10 + 30);
+      roadLabels.push({ text, len, need });
+    }
+    $("#lyr-roads").addEventListener("change", (e) => {
+      gRoads.style.display = gRoadLabels.style.display = e.target.checked ? "" : "none";
+      attrib.hidden = !layers.osm && !e.target.checked;
+    });
+  }
+  function drawRoadLabels() {
+    if (!roadLabels.length) return;
+    const k = view.k, on = k > fitK * 1.8;
+    gRoadLabels.style.visibility = on ? "" : "hidden";
+    if (!on) return;
+    // labels live in world units, so counter-scale the type and halo
+    gRoadLabels.setAttribute("font-size", (11 / k).toFixed(3));
+    gRoadLabels.setAttribute("stroke-width", (3 / k).toFixed(3));
+    for (const r of roadLabels) r.text.style.display = r.len * k > r.need ? "" : "none";
+  }
+
   // ---------- detailed plan overlay ----------
   // Patches come georeferenced from scripts/georef_plan.py. A viewer can nudge them
   // (move / rotate / scale about the plan centre) and copy the result back.
@@ -1585,6 +1709,7 @@ h3.mini .zh { text-transform: none; letter-spacing: 0.02em; }
     `Land use: ${esc(src)}`,
     `Detailed plan overlay: ${esc(G.source)}. Placed by a similarity transform (scale ${G.scale_m_per_mm} m per drawing mm from the zone areas, rotation ${G.rotation_deg}°, translation fitted to ${G.control_points.length} control points); ${esc(G.status)}.`,
     `Reference points: coordinates as published by the sources listed with each point (Wikipedia infoboxes, OurAirports).`,
+    ...(DATA.roads ? [`Road network: © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors, ODbL 1.0; fetched ${esc(DATA.roads.fetched)} via the Overpass API and simplified to ${DATA.roads.simplify_tolerance_m} m. Local streets cover the Shuinan area only.`] : []),
     `Major projects: sources are listed with each entry. The Open / Upcoming chips are our grouping of the status text.`,
     `Coordinates: WGS84 (CRS84). The map uses Web Mercator to match the OpenStreetMap tiles; the scale bar uses the east-west scale at the center of the study area.`,
     ...(BASEMAP ? [`Basemap: © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors. Tiles from the OpenStreetMap Foundation, used under its <a href="https://operations.osmfoundation.org/policies/tiles/" target="_blank" rel="noopener">tile usage policy</a>.`] : []),

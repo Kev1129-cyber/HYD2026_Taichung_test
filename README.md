@@ -49,6 +49,12 @@ python3 scripts/build_map.py
 
 跑道南北兩端緯度為24.1786°N與24.1933°N（PilotNav）。描圖範圍約為120.6368–120.6610°E、24.1736–24.1982°N。
 
+## 路網圖（OSM）
+
+地圖的 **Road network** 圖層來自OpenStreetMap：西屯、北屯範圍內的國道到區道（motorway至tertiary）、鐵路與捷運，加上水湳周邊的巷道（放大後才顯示）。主要道路放大後會沿線標示英文路名與中文路名。
+
+這個環境連不到Overpass API，所以資料由GitHub Actions抓取：到repo的 **Actions → Fetch OSM road network → Run workflow**，它會執行`scripts/fetch_roads.py`、重建網站並把`data/derived/roads_osm.geojson`commit回分支。要更新路網時再執行一次即可。資料授權為ODbL 1.0，使用時須標示「© OpenStreetMap contributors」。
+
 ## OpenStreetMap底圖
 
 地圖採Web Mercator投影，直接載入OSM標準圖磚：
@@ -113,6 +119,7 @@ map/index.html          互動地圖（建置產生）
 templates/              頁面模板
 scripts/build_map.py    建置腳本
 scripts/georef_plan.py  細部計畫描圖定位
+scripts/fetch_roads.py  OSM路網抓取（由GitHub Actions執行）
 data/raw/               原始資料
-data/derived/           定位後的細部計畫描圖
+data/derived/           定位後的細部計畫描圖、OSM路網
 ```

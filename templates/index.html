@@ -1,4 +1,4 @@
-<title>HYD2026臺中成果</title>
+<title>HYD2026 Taichung Outputs</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@500;600&display=swap">
@@ -23,6 +23,7 @@
   --font-display: "Instrument Serif", "Noto Serif TC", "Songti TC", "PMingLiU", Georgia, serif;
   --font-body: "Instrument Sans", "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --font-zh: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -94,6 +95,23 @@ h1 {
   text-wrap: balance;
 }
 .lede { margin: 16px 0 0; max-width: 40em; color: var(--ink-2); }
+h1 i, .work h3 i { font-style: italic; }
+
+/* Chinese as the supporting language: smaller, quieter, set in the CJK face */
+.zh {
+  margin-left: 0.45em;
+  font-family: var(--font-zh);
+  font-size: 0.86em;
+  font-weight: 400;
+  font-style: normal;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: var(--muted);
+}
+.zh.block { display: block; margin-left: 0; margin-top: 4px; }
+h1 .zh { font-family: "Noto Serif TC", "Songti TC", serif; font-size: 0.42em; font-weight: 500; letter-spacing: 0.08em; }
+.lede .zh.block { margin-top: 8px; font-size: 13.5px; line-height: 1.7; }
+.work h3 .zh.block { font-family: "Noto Serif TC", "Songti TC", serif; font-size: 15px; letter-spacing: 0.08em; margin-top: 6px; }
 
 /* section labels: mono caps under a 2px ink rule, as in the deck */
 h2 {
@@ -170,48 +188,48 @@ footer { font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--rul
 footer a { color: inherit; }
 </style>
 
-<div class="page" lang="zh-Hant-TW">
+<div class="page" lang="en">
   <header>
-    <p class="eyebrow">#HackYourDistrict 2026｜臺中市・水湳周邊</p>
-    <h1>HYD2026臺中成果</h1>
-    <p class="lede">整理臺中市西屯區、北屯區的行政界線，以及水湳機場原址細部計畫的土地使用面積與園區重大建設進度，做成可在瀏覽器直接操作的地圖。</p>
+    <p class="eyebrow">#HackYourDistrict 2026 · Taichung · Shuinan context layers</p>
+    <h1>HYD2026 Taichung <i>Outputs</i><span class="zh" lang="zh-Hant-TW">臺中成果</span></h1>
+    <p class="lede">District and village boundaries for Xitun and Beitun, the land-use areas and major projects of the Shuinan Airport site detailed plan, and a traced overlay of the plan itself, gathered into a map that runs in the browser.<span class="zh block" lang="zh-Hant-TW">整理西屯區、北屯區行政界線、水湳機場原址細部計畫土地使用面積與重大建設進度，以及細部計畫疊圖，做成可在瀏覽器直接操作的地圖。</span></p>
   </header>
 
   <section aria-labelledby="h-out">
-    <h2 id="h-out">成果</h2>
+    <h2 id="h-out">Outputs<span class="zh" lang="zh-Hant-TW">成果</span></h2>
     <article class="work">
-      <a class="thumb-link" href="map/index.html" aria-label="開啟西屯・北屯基本圖"><!--__THUMB__--></a>
+      <a class="thumb-link" href="map/index.html" aria-label="Open the Xitun and Beitun base map"><!--__THUMB__--></a>
       <div>
-        <p class="kicker">互動地圖</p>
-        <h3><a href="map/index.html">西屯・北屯基本圖</a></h3>
-        <p class="desc">西屯區、北屯區的區界與<!--__N_VILLAGES__-->個里界，疊在OpenStreetMap底圖上；可縮放、查詢各里面積與代碼，側欄附細部計畫土地使用面積與重大建設進度。</p>
+        <p class="kicker">Interactive map<span class="zh" lang="zh-Hant-TW">互動地圖</span></p>
+        <h3><a href="map/index.html">Xitun &amp; Beitun <i>Base Map</i></a><span class="zh block" lang="zh-Hant-TW">西屯・北屯基本圖</span></h3>
+        <p class="desc">District and <!--__N_VILLAGES__--> village boundaries on an OpenStreetMap basemap, with village lookup, the traced detailed plan, reference points with sourced coordinates, and side panels on plan land use and major projects.</p>
         <dl class="facts">
-          <dt>範圍</dt><dd><!--__EXTENT__--></dd>
-          <dt>里界</dt><dd><!--__BOUNDARY_DATE__--></dd>
-          <dt>土地使用</dt><dd><!--__ZONING_DATE__--></dd>
-          <dt>建設進度</dt><dd><!--__PROJECT_DATE__--></dd>
+          <dt>Extent</dt><dd><!--__EXTENT__--></dd>
+          <dt>Boundaries</dt><dd><!--__BOUNDARY_DATE__--></dd>
+          <dt>Land use</dt><dd><!--__ZONING_DATE__--></dd>
+          <dt>Projects</dt><dd><!--__PROJECT_DATE__--></dd>
         </dl>
-        <a class="btn" href="map/index.html">開啟互動地圖</a>
+        <a class="btn" href="map/index.html">Open the map</a>
       </div>
     </article>
   </section>
 
   <section aria-labelledby="h-data">
-    <h2 id="h-data">資料下載</h2>
+    <h2 id="h-data">Data<span class="zh" lang="zh-Hant-TW">資料下載</span></h2>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>檔案</th><th>內容</th><th class="size">大小</th></tr></thead>
+        <thead><tr><th>File</th><th>Contents</th><th class="size">Size</th></tr></thead>
         <tbody><!--__DOWNLOADS__--></tbody>
       </table>
     </div>
   </section>
 
   <section aria-labelledby="h-src">
-    <h2 id="h-src">資料來源與授權</h2>
+    <h2 id="h-src">Sources and licences<span class="zh" lang="zh-Hant-TW">資料來源與授權</span></h2>
     <ul class="sources"><!--__SOURCES__--></ul>
   </section>
 
   <footer>
-    原始資料、地圖模板與建置腳本：<a href="https://github.com/yunching0513/HYD2026_Taichung">github.com/yunching0513/HYD2026_Taichung</a>
+    Source data, map templates and build scripts: <a href="https://github.com/yunching0513/HYD2026_Taichung">github.com/yunching0513/HYD2026_Taichung</a>
   </footer>
 </div>
