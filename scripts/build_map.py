@@ -1,26 +1,35 @@
-"""Build the Xitun/Beitun base map (map/index.html) from data/raw.
+"""Build the static site: the landing page (index.html) and the base map (map/index.html).
 
-Reads the district and village GeoJSON plus the two Shuinan CSV tables,
-inlines them into map/basemap.template.html, and writes a self-contained
-HTML page that opens directly from disk (no server, no external data).
+Reads the district and village GeoJSON plus the two Shuinan CSV tables from
+data/raw, fills templates/index.html and templates/basemap.html, and writes
+self-contained HTML pages ready for GitHub Pages (deploy from branch, root).
 
 Usage:
-    python3 scripts/build_map.py                     # writes map/index.html
-    python3 scripts/build_map.py --fragment out.html # also writes a body-only
-                                                     # fragment (for Artifact publish)
+    python3 scripts/build_map.py                     # writes index.html and map/index.html
+    python3 scripts/build_map.py --fragment out.html # also writes a body-only map fragment
+                                                     # without the OSM basemap (for Artifact publish)
 
 Standard library only.
 """
 
 import argparse
 import csv
+import html
 import json
+import math
+import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 RAW = ROOT / "data" / "raw"
-TEMPLATE = ROOT / "map" / "basemap.template.html"
-OUT = ROOT / "map" / "index.html"
+TEMPLATES = ROOT / "templates"
+MAP_OUT = ROOT / "map" / "index.html"
+LANDING_OUT = ROOT / "index.html"
+
+DISTRICTS = RAW / "context_xitun_beitun_districts.geojson"
+VILLAGES = RAW / "context_xitun_beitun_villages.geojson"
+ZONING = RAW / "shuinan_zoning_areas_2024.csv"
+PROJECTS = RAW / "shuinan_major_projects_2026.csv"
 
 # Traditional Chinese renderings of status_en / key_figures_en in
 # shuinan_major_projects_2026.csv, keyed by project_zh. `phase` drives the
@@ -64,6 +73,16 @@ PROJECT_ZH = {
     },
 }
 
+# Landing-page download table: (file, description).
+DOWNLOADS = [
+    (DISTRICTS, "西屯區、北屯區區界"),
+    (VILLAGES, "西屯區、北屯區81個里界"),
+    (ZONING, "水湳機場原址細部計畫土地使用分區面積（2024）"),
+    (PROJECTS, "水湳經貿園區重大建設進度（2026）"),
+]
+
+DATE_RE = re.compile(r"\d{4}-\d{2}-\d{2}")
+
 
 def read_csv(path):
     # utf-8-sig: the source CSVs are saved with a byte-order mark (Excel-friendly).
@@ -71,12 +90,16 @@ def read_csv(path):
         return list(csv.DictReader(f))
 
 
+def read_json(path):
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
 def load_data():
-    districts = json.loads((RAW / "context_xitun_beitun_districts.geojson").read_text(encoding="utf-8"))
-    villages = json.loads((RAW / "context_xitun_beitun_villages.geojson").read_text(encoding="utf-8"))
+    districts = read_json(DISTRICTS)
+    villages = read_json(VILLAGES)
 
     zoning = []
-    for row in read_csv(RAW / "shuinan_zoning_areas_2024.csv"):
+    for row in read_csv(ZONING):
         zoning.append({
             "zh": row["zone_zh"],
             "en": row["zone_en"],
@@ -86,7 +109,7 @@ def load_data():
         })
 
     projects = []
-    for row in read_csv(RAW / "shuinan_major_projects_2026.csv"):
+    for row in read_csv(PROJECTS):
         zh = PROJECT_ZH.get(row["project_zh"], {})
         projects.append({
             "zh": row["project_zh"],
@@ -125,28 +148,137 @@ def inline_json(obj):
     return text.replace("</", "<\\/")
 
 
-def main():
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--fragment", type=Path,
-                        help="also write a body-only fragment (no doctype/html/head) to this path")
-    args = parser.parse_args()
+def fill(template, values):
+    for marker, value in values.items():
+        if marker not in template:
+            raise SystemExit(f"marker {marker!r} not found in template")
+        template = template.replace(marker, value)
+    return template
 
-    template = TEMPLATE.read_text(encoding="utf-8")
-    marker = "/*__DATA__*/null"
-    if marker not in template:
-        raise SystemExit(f"data marker {marker!r} not found in {TEMPLATE}")
-    fragment = template.replace(marker, inline_json(load_data()))
 
-    page = (
+def wrap_page(fragment):
+    return (
         "<!doctype html>\n"
         '<html lang="zh-Hant-TW">\n<head>\n<meta charset="utf-8">\n'
         '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n'
+        # OSM tile servers expect a Referer from web pages; keep the browser default explicit.
+        '<meta name="referrer" content="strict-origin-when-cross-origin">\n'
         "</head>\n<body>\n" + fragment + "\n</body>\n</html>\n"
     )
-    OUT.write_text(page, encoding="utf-8")
-    print(f"wrote {OUT.relative_to(ROOT)} ({len(page.encode('utf-8')) / 1024:.0f} KB)")
+
+
+def write(path, text):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8")
+    print(f"wrote {path.relative_to(ROOT)} ({len(text.encode('utf-8')) / 1024:.0f} KB)")
+
+
+def rings(geom):
+    return [geom["coordinates"]] if geom["type"] == "Polygon" else geom["coordinates"]
+
+
+def thumbnail_svg(data, width=560, pad=6):
+    """Static outline of districts and villages for the landing page (Web Mercator, like the map)."""
+    def merc(lon, lat):
+        return math.radians(lon), math.log(math.tan(math.pi / 4 + math.radians(lat) / 2))
+
+    pts = [merc(lon, lat)
+           for f in data["districts"]["features"]
+           for poly in rings(f["geometry"]) for ring in poly for lon, lat in ring]
+    x0, x1 = min(p[0] for p in pts), max(p[0] for p in pts)
+    y0, y1 = min(p[1] for p in pts), max(p[1] for p in pts)
+    scale = (width - 2 * pad) / (x1 - x0)
+    height = (y1 - y0) * scale + 2 * pad
+
+    def path(geom):
+        out = []
+        for poly in rings(geom):
+            for ring in poly:
+                cmds = []
+                for i, (lon, lat) in enumerate(ring):
+                    x, y = merc(lon, lat)
+                    cmds.append(f"{'L' if i else 'M'}{pad + (x - x0) * scale:.1f} {pad + (y1 - y) * scale:.1f}")
+                out.append("".join(cmds) + "Z")
+        return "".join(out)
+
+    order = {f["properties"]["district_code"]: i for i, f in enumerate(data["districts"]["features"])}
+    parts = [f'<path class="v d{order[f["properties"]["district_code"]]}" d="{path(f["geometry"])}"/>'
+             for f in data["villages"]["features"]]
+    parts += [f'<path class="dist" d="{path(f["geometry"])}"/>' for f in data["districts"]["features"]]
+    return (f'<svg class="thumb" viewBox="0 0 {width} {height:.0f}" role="img" '
+            f'aria-label="西屯區與北屯區的里界輪廓">{"".join(parts)}</svg>')
+
+
+def landing_values(data):
+    villages = data["villages"]["features"]
+    districts = data["districts"]["features"]
+    area = sum(f["properties"]["area_km2"] for f in districts)
+    names = "、".join(f["properties"]["district_zh"] for f in districts)
+
+    m = re.search(r"village boundaries \((\d{4}-\d{2}-\d{2})\)", data["boundary_source"])
+    boundary_date = f"國土測繪中心村里界{m.group(1)}" if m else "國土測繪中心村里界"
+    zoning_src = data["zoning"][0]["source"]
+    zd = DATE_RE.search(zoning_src)
+    project_dates = sorted(d for p in data["projects"] for d in DATE_RE.findall(p["source"]))
+
+    rows = []
+    for path, desc in DOWNLOADS:
+        rel = path.relative_to(ROOT).as_posix()
+        size_kb = path.stat().st_size / 1024
+        rows.append(
+            f'<tr><td class="file"><a href="{rel}" download>{html.escape(path.name)}</a>'
+            f'<span class="fmt">{path.suffix[1:].upper()}</span></td>'
+            f"<td>{html.escape(desc)}</td>"
+            f'<td class="size num">{size_kb:.1f} KB</td></tr>'
+        )
+
+    sources = [
+        f"區界與里界：{html.escape(data['boundary_source'])}",
+        "邊界為簡化版本，適合示意與脈絡判讀，不宜用於量測或精確套疊。",
+        f"土地使用分區面積：{html.escape(zoning_src)}",
+        "重大建設進度：臺中市政府專案報告與新聞報導，各列來源見CSV的source欄位。",
+        '底圖：© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors，'
+        '圖磚依<a href="https://operations.osmfoundation.org/policies/tiles/">OSM圖磚使用政策</a>使用。',
+    ]
+
+    return {
+        "<!--__THUMB__-->": thumbnail_svg(data),
+        "<!--__N_VILLAGES__-->": str(len(villages)),
+        "<!--__EXTENT__-->": f'{html.escape(names)}・{len(villages)}里・<span class="num">{area:.2f}</span> km²',
+        "<!--__BOUNDARY_DATE__-->": boundary_date,
+        "<!--__ZONING_DATE__-->": f"第二次通盤檢討公開展覽說明會{zd.group(0) if zd else ''}",
+        "<!--__PROJECT_DATE__-->": f"資料至{project_dates[-1]}" if project_dates else "",
+        "<!--__DOWNLOADS__-->": "".join(rows),
+        "<!--__SOURCES__-->": "".join(f"<li>{s}</li>" for s in sources),
+    }
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--fragment", type=Path,
+                        help="also write a body-only map fragment (no doctype/html/head, no OSM basemap) to this path")
+    args = parser.parse_args()
+
+    data = load_data()
+    map_template = (TEMPLATES / "basemap.html").read_text(encoding="utf-8")
+    payload = inline_json(data)
+
+    map_page = fill(map_template, {
+        "/*__DATA__*/null": payload,
+        "/*__BASEMAP__*/true": "true",
+        "<!--__EYEBROW__-->": '<a href="../index.html">HYD2026臺中成果</a>｜臺中市・水湳周邊脈絡圖層',
+    })
+    write(MAP_OUT, wrap_page(map_page))
+
+    landing = fill((TEMPLATES / "index.html").read_text(encoding="utf-8"), landing_values(data))
+    write(LANDING_OUT, wrap_page(landing))
 
     if args.fragment:
+        fragment = fill(map_template, {
+            "/*__DATA__*/null": payload,
+            "/*__BASEMAP__*/true": "false",
+            "<!--__EYEBROW__-->": "TAICHUNG｜臺中市・水湳周邊脈絡圖層",
+        })
         args.fragment.write_text(fragment, encoding="utf-8")
         print(f"wrote {args.fragment}")
 

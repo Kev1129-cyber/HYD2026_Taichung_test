@@ -21,6 +21,9 @@
   --d2: #eb6834;
   --tint: 20%;
   --tint-hi: 36%;
+  --tile-tint: 0.16;
+  --tile-tint-hi: 0.32;
+  --tile-filter: saturate(0.55) contrast(0.95);
   --neutral-fill: #b4c0c2;
   --good: #0ca30c;
   --warn: #fab219;
@@ -53,6 +56,9 @@
     --d2: #d95926;
     --tint: 22%;
     --tint-hi: 42%;
+    --tile-tint: 0.22;
+    --tile-tint-hi: 0.4;
+    --tile-filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.88) saturate(0.45);
     --neutral-fill: #4a5a5f;
     --shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
     color-scheme: dark;
@@ -74,6 +80,9 @@
   --d2: #d95926;
   --tint: 22%;
   --tint-hi: 42%;
+  --tile-tint: 0.22;
+  --tile-tint-hi: 0.4;
+  --tile-filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.88) saturate(0.45);
   --neutral-fill: #4a5a5f;
   --shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
   color-scheme: dark;
@@ -109,6 +118,7 @@ button, input { font: inherit; color: inherit; }
   justify-content: space-between;
   gap: 4px 24px;
 }
+.eyebrow a { color: inherit; text-underline-offset: 3px; }
 .eyebrow {
   margin: 0;
   font: 500 var(--fs-xs)/1.4 var(--font-mono);
@@ -153,6 +163,8 @@ h1 {
 
 /* ---------- map svg ---------- */
 #map {
+  position: relative;
+  z-index: 1;
   display: block;
   width: 100%;
   height: 100%;
@@ -180,6 +192,28 @@ h1 {
 #map.no-fill .vil { fill: var(--surface); }
 #map.no-fill .vil.is-hot, #map.no-fill .vil.is-sel { fill: color-mix(in srgb, var(--ink) 8%, var(--surface)); }
 #map.no-vline .vil { stroke: none; }
+
+/* OpenStreetMap raster tiles sit in an HTML layer under the svg */
+.tiles {
+  position: absolute;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  filter: var(--tile-filter);
+}
+.tiles img {
+  position: absolute;
+  left: 0;
+  top: 0;
+  max-width: none;
+  user-select: none;
+}
+#map.has-tiles .ground { fill: none; }
+#map.has-tiles .vil.d0 { fill: var(--d1); fill-opacity: var(--tile-tint); }
+#map.has-tiles .vil.d1 { fill: var(--d2); fill-opacity: var(--tile-tint); }
+#map.has-tiles .vil.is-hot, #map.has-tiles .vil.is-sel { fill-opacity: var(--tile-tint-hi); }
+#map.has-tiles.no-fill .vil { fill-opacity: 0; }
+#map.has-tiles.no-fill .vil.is-hot, #map.has-tiles.no-fill .vil.is-sel { fill: var(--ink); fill-opacity: 0.1; }
 
 .dist {
   fill: none;
@@ -263,10 +297,21 @@ h1 {
 }
 .map-ctrl button:hover { background: var(--bg); }
 .map-ctrl svg { width: 16px; height: 16px; }
+.attrib {
+  position: absolute;
+  right: 9px;
+  bottom: 23px;
+  padding: 1px 6px;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  font-size: 10.5px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+.attrib a { color: inherit; }
 .coord {
   position: absolute;
   right: 16px;
-  bottom: 32px;
+  bottom: 48px;
   padding: 2px 6px;
   background: color-mix(in srgb, var(--surface) 88%, transparent);
   font: var(--fs-xs)/1.4 var(--font-mono);
@@ -465,6 +510,7 @@ h2 {
 .chip.pending::before { background: var(--warn); }
 
 .sources { margin: 0; padding-left: 1.1em; font-size: var(--fs-xs); color: var(--ink-2); display: grid; gap: 6px; }
+.sources a { color: inherit; text-underline-offset: 2px; }
 
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
@@ -474,7 +520,7 @@ h2 {
 <div class="app" lang="zh-Hant-TW">
   <header class="top">
     <div>
-      <p class="eyebrow">TAICHUNG｜臺中市・水湳周邊脈絡圖層</p>
+      <p class="eyebrow"><!--__EYEBROW__--></p>
       <h1>西屯・北屯基本圖</h1>
     </div>
     <p class="facts" id="facts"></p>
@@ -482,6 +528,7 @@ h2 {
 
   <main class="main">
     <div class="mapframe" id="mapframe">
+      <div class="tiles" id="tiles" aria-hidden="true" hidden></div>
       <svg id="map" tabindex="0" role="img" aria-label="臺中市西屯區與北屯區的區界與里界地圖。可拖曳平移、滾輪或雙指縮放，方向鍵平移，加減號縮放，0回到全圖。">
         <defs><clipPath id="clip"><rect id="cliprect"></rect></clipPath></defs>
         <rect class="ground" id="groundrect"></rect>
@@ -507,6 +554,7 @@ h2 {
         </button>
       </div>
       <div class="coord" id="coord" hidden></div>
+      <div class="attrib" id="attrib" hidden>© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors</div>
     </div>
 
     <aside class="aside">
@@ -518,10 +566,12 @@ h2 {
           <li><span class="line-key thin"></span>里界</li>
         </ul>
         <div class="toggles" role="group" aria-label="圖層">
+          <label id="lyr-osm-wrap" hidden><input type="checkbox" id="lyr-osm" checked>OSM底圖</label>
           <label><input type="checkbox" id="lyr-fill" checked>區底色</label>
           <label><input type="checkbox" id="lyr-vline" checked>里界</label>
           <label><input type="checkbox" id="lyr-vlabel" checked>里名</label>
         </div>
+        <p class="note" id="osm-msg" hidden></p>
         <p class="note">點選圖例中的行政區可定位；里名會隨縮放比例自動顯示。</p>
       </section>
 
@@ -581,8 +631,9 @@ h2 {
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   // ---------- projection ----------
-  // Local equirectangular projection in metres, centred on the study area.
-  // Over this ~22 km x 7 km extent the scale error is well under 0.1%.
+  // Spherical (Web) Mercator, the projection OpenStreetMap tiles use, with the
+  // origin moved to the study-area centre. World units are Mercator metres;
+  // GROUND converts them to ground metres along the east-west axis.
   const rings = (g) => (g.type === "Polygon" ? [g.coordinates] : g.coordinates);
   let minLon = Infinity, maxLon = -Infinity, minLat = Infinity, maxLat = -Infinity;
   for (const f of DATA.districts.features) {
@@ -592,11 +643,14 @@ h2 {
     }
   }
   const LON0 = (minLon + maxLon) / 2, LAT0 = (minLat + maxLat) / 2;
-  const RAD = Math.PI / 180;
-  const MLAT = 111132.92 - 559.82 * Math.cos(2 * LAT0 * RAD) + 1.175 * Math.cos(4 * LAT0 * RAD);
-  const MLON = 111412.84 * Math.cos(LAT0 * RAD) - 93.5 * Math.cos(3 * LAT0 * RAD);
-  const proj = (lon, lat) => [(lon - LON0) * MLON, (LAT0 - lat) * MLAT];
-  const unproj = (x, y) => [LON0 + x / MLON, LAT0 - y / MLAT];
+  const RAD = Math.PI / 180, R = 6378137, HALF = Math.PI * R;
+  const mercX = (lon) => R * lon * RAD;
+  const mercY = (lat) => R * Math.log(Math.tan(Math.PI / 4 + (lat * RAD) / 2));
+  const X0 = mercX(LON0), Y0 = mercY(LAT0);
+  const MLON = 111412.84 * Math.cos(LAT0 * RAD) - 93.5 * Math.cos(3 * LAT0 * RAD); // WGS84 ground metres per degree of longitude
+  const GROUND = MLON / (R * RAD); // ground metres per Mercator metre at LAT0
+  const proj = (lon, lat) => [mercX(lon) - X0, Y0 - mercY(lat)];
+  const unproj = (x, y) => [(x + X0) / R / RAD, (2 * Math.atan(Math.exp((Y0 - y) / R)) - Math.PI / 2) / RAD];
 
   const geomPath = (g) => rings(g).map((poly) => poly.map((ring) => ring.map(([lon, lat], i) => {
     const [x, y] = proj(lon, lat);
@@ -626,7 +680,7 @@ h2 {
       p, dist,
       name: clean(p.village_zh), en: clean(p.village_en),
       d: geomPath(f.geometry), box: geomBox(f.geometry), lx, ly,
-      side: Math.sqrt(p.area_km2 * 1e6),
+      side: Math.sqrt(p.area_km2 * 1e6) / GROUND,
       need: [...clean(p.village_zh)].length * 11 + 10,
     };
   });
@@ -668,7 +722,8 @@ h2 {
   let view = { k: 1, tx: 0, ty: 0 };
   let interacted = false;
   let selected = null, hot = null;
-  const layers = { fill: true, vline: true, vlabel: true };
+  const BASEMAP = /*__BASEMAP__*/true; // false where external tiles are blocked (e.g. the Claude artifact build)
+  const layers = { osm: BASEMAP, fill: true, vline: true, vlabel: true };
 
   const inner = () => ({ x0: M.l, y0: M.t, x1: W - M.r, y1: H - M.b });
   function fitView(box, pad, cap, clamp = true) {
@@ -693,6 +748,7 @@ h2 {
       el.setAttribute("x", r.x0); el.setAttribute("y", r.y0);
       el.setAttribute("width", r.x1 - r.x0); el.setAttribute("height", r.y1 - r.y0);
     }
+    Object.assign(tilesDiv.style, { left: r.x0 + "px", top: r.y0 + "px", width: r.x1 - r.x0 + "px", height: r.y1 - r.y0 + "px" });
     // zoom limits are relative to the full-extent fit, so compute that unclamped first
     const prevFit = fitK;
     fitK = fitView(totalBox, 18, null, false).k;
@@ -732,6 +788,7 @@ h2 {
     }
     drawTicks();
     drawScale();
+    if (layers.osm) updateTiles();
   }
 
   // ---------- map furniture ----------
@@ -747,7 +804,7 @@ h2 {
     const r = inner();
     const steps = [0.25, 0.5, 1, 2, 5, 10, 15, 30]; // arc-minutes
     const pick = (pxPerMin) => steps.find((s) => s * pxPerMin >= 74) ?? 30;
-    const sLon = pick((k * MLON) / 60), sLat = pick((k * MLAT) / 60);
+    const sLon = pick((k * R * RAD) / 60), sLat = pick((k * R * RAD) / Math.cos(LAT0 * RAD) / 60);
 
     const lonA = unproj((r.x0 - tx) / k, 0)[0] * 60, lonB = unproj((r.x1 - tx) / k, 0)[0] * 60;
     for (let i = Math.ceil(lonA / sLon); i * sLon <= lonB; i++) {
@@ -774,11 +831,11 @@ h2 {
 
   function drawScale() {
     gScale.replaceChildren();
-    const target = 120 / view.k; // metres spanned by ~120 px
+    const target = (120 / view.k) * GROUND; // ground metres spanned by ~120 px
     const nice = [50, 100, 200, 250, 500, 1000, 2000, 2500, 5000, 10000];
     let len = nice[0];
     for (const n of nice) if (n <= target) len = n;
-    const px = len * view.k;
+    const px = (len / GROUND) * view.k;
     const r = inner();
     const x0 = r.x0 + 14, y0 = r.y1 - 16;
     svgEl("rect", { class: "sb-a", x: x0, y: y0, width: px / 2, height: 5 }, gScale);
@@ -798,6 +855,84 @@ h2 {
     svgEl("path", { class: "north-b", d: "M0 -12 L7 8 L0 3 Z" }, g);
     svgEl("path", { class: "north-a", d: "M0 -12 L-7 8 L0 3 Z" }, g);
     svgEl("text", { class: "north-n", x: 0, y: -17 }, g).textContent = "N";
+  }
+
+  // ---------- OpenStreetMap basemap ----------
+  // Standard XYZ raster tiles. Tile usage policy: https://operations.osmfoundation.org/policies/tiles/
+  // (visible attribution required; fine for light interactive use, no bulk downloading).
+  const TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
+  const tilesDiv = $("#tiles"), attrib = $("#attrib"), osmMsg = $("#osm-msg");
+  const tileCache = new Map(); // "z/x/y" -> { img, z, x, y, ok, failed }
+  let tileZ = -1, wanted = new Set(), tileLoads = 0, tileErrors = 0;
+
+  function updateTiles() {
+    const { k, tx, ty } = view;
+    const r = inner();
+    const z = Math.max(0, Math.min(19, Math.round(Math.log2((2 * HALF * k) / 256))));
+    const n = 2 ** z, T = (2 * HALF) / n; // tile edge in Mercator metres
+    // visible extent in absolute Mercator metres (y grows northward)
+    const ax0 = (r.x0 - tx) / k + X0, ax1 = (r.x1 - tx) / k + X0;
+    const ayTop = Y0 - (r.y0 - ty) / k, ayBot = Y0 - (r.y1 - ty) / k;
+    const c0 = Math.max(0, Math.floor((ax0 + HALF) / T)), c1 = Math.min(n - 1, Math.floor((ax1 + HALF) / T));
+    const r0 = Math.max(0, Math.floor((HALF - ayTop) / T)), r1 = Math.min(n - 1, Math.floor((HALF - ayBot) / T));
+    wanted = new Set();
+    tileZ = z;
+    for (let x = c0; x <= c1; x++) for (let y = r0; y <= r1; y++) {
+      const key = `${z}/${x}/${y}`;
+      wanted.add(key);
+      if (tileCache.has(key)) continue;
+      const img = new Image();
+      const t = { img, z, x, y, ok: false, failed: false };
+      img.alt = "";
+      img.decoding = "async";
+      img.draggable = false;
+      img.onload = () => { t.ok = true; tileLoads++; pruneTiles(); };
+      img.onerror = () => {
+        t.failed = true; tileErrors++; img.remove(); pruneTiles();
+        if (!tileLoads && tileErrors >= 4) basemapFailed();
+      };
+      img.src = TILE_URL.replace("{z}", z).replace("{x}", x).replace("{y}", y);
+      tileCache.set(key, t);
+      tilesDiv.appendChild(img);
+    }
+    // same-zoom tiles that scrolled away go now; other zooms stay until the new set has loaded
+    for (const [key, t] of tileCache) if (t.z === z && !wanted.has(key)) { t.img.remove(); tileCache.delete(key); }
+    pruneTiles();
+    for (const t of tileCache.values()) {
+      if (t.failed) continue;
+      const Tz = (2 * HALF) / 2 ** t.z;
+      const sx = k * (t.x * Tz - HALF - X0) + tx - r.x0;
+      const sy = k * (Y0 - (HALF - t.y * Tz)) + ty - r.y0;
+      const size = k * Tz + 0.5; // half-pixel overlap hides seams between tiles
+      t.img.style.transform = `translate(${sx}px, ${sy}px)`;
+      t.img.style.width = t.img.style.height = size + "px";
+      t.img.style.zIndex = t.z === z ? 2 : 1;
+    }
+  }
+  function pruneTiles() {
+    const ready = [...wanted].every((key) => { const t = tileCache.get(key); return t && (t.ok || t.failed); });
+    for (const [key, t] of tileCache) {
+      if (t.z !== tileZ && (ready || tileCache.size > 160)) { t.img.remove(); tileCache.delete(key); }
+    }
+  }
+  function clearTiles() {
+    for (const t of tileCache.values()) t.img.remove();
+    tileCache.clear();
+    wanted = new Set();
+  }
+  function setBasemap(on, redraw = true) {
+    layers.osm = on;
+    $("#lyr-osm").checked = on;
+    svg.classList.toggle("has-tiles", on);
+    tilesDiv.hidden = !on;
+    attrib.hidden = !on;
+    if (!on) clearTiles();
+    if (redraw) draw();
+  }
+  function basemapFailed() {
+    setBasemap(false);
+    osmMsg.textContent = "OSM底圖無法載入（可能是離線、網路限制，或以本機檔案開啟），已改為無底圖顯示。";
+    osmMsg.hidden = false;
   }
 
   // ---------- view changes ----------
@@ -1017,6 +1152,12 @@ h2 {
       draw();
     });
   };
+  $("#lyr-osm-wrap").hidden = !BASEMAP;
+  $("#lyr-osm").addEventListener("change", (e) => {
+    osmMsg.hidden = true;
+    tileErrors = 0;
+    setBasemap(e.target.checked);
+  });
   bindLayer("#lyr-fill", "fill", "no-fill");
   bindLayer("#lyr-vline", "vline", "no-vline");
   bindLayer("#lyr-vlabel", "vlabel", null);
@@ -1111,10 +1252,12 @@ h2 {
     `邊界為簡化版本（${villages.length}里合計約${DATA.villages.features.reduce((s, f) => s + rings(f.geometry).flat().reduce((t, r) => t + r.length, 0), 0)}個頂點），適合示意與脈絡判讀，不宜用於量測或精確套疊；面積數值取自資料屬性欄位。`,
     `土地使用面積：${esc(src)}`,
     `重大建設進度：各列來源如上；中文狀態為英文原欄位的翻譯。`,
-    `座標系統：WGS84經緯度（CRS84）。地圖以研究區中心做等距圓柱投影，比例尺於本範圍內誤差小於0.1%。`,
+    `座標系統：WGS84經緯度（CRS84）。地圖採Web Mercator投影，與OpenStreetMap圖磚一致；比例尺依研究區中心緯度的東西向尺度計算。`,
+    ...(BASEMAP ? [`底圖：© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors；圖磚由OpenStreetMap基金會提供，依其<a href="https://operations.osmfoundation.org/policies/tiles/" target="_blank" rel="noopener">圖磚使用政策</a>使用。`] : []),
   ].map((t) => `<li>${t}</li>`).join("");
 
   // ---------- boot ----------
+  setBasemap(BASEMAP, false);
   new ResizeObserver(() => resize()).observe(frame);
   resize();
 })();
