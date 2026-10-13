@@ -736,7 +736,7 @@ h3.mini .zh { text-transform: none; letter-spacing: 0.02em; }
 
       <section aria-labelledby="h-plan">
         <h2 id="h-plan">Detailed Plan Overlay<span class="zh block" lang="zh-Hant-TW">細部計畫疊圖</span></h2>
-        <p class="sub">Traced from Figure 7-1 of the second comprehensive review (unofficial English reference) and placed by estimate. Expect errors of about 100–200 m until it is checked against the basemap.</p>
+        <p class="sub">Traced from Figure 7-1 of the second comprehensive review (unofficial English reference) and fitted to OpenStreetMap road centrelines. Block edges now sit a median 11 m from the nearest road, so expect errors of a few tens of metres.</p>
         <ul class="plan-legend" id="plan-legend"></ul>
         <p class="note">* Matched by area against the plan's land-use table. Park, drainage and blue patches follow colour conventions only.</p>
         <div class="plan-ctrl">
@@ -1412,10 +1412,13 @@ h3.mini .zh { text-transform: none; letter-spacing: 0.02em; }
       if (cls === "motorway") svgEl("path", { class: "road motorway-in", d }, gRoads);
     }
     // labels: the longest way of each named arterial or collector, set left to right along the line
+    // OSM English names come as "Section 3, Wenxin Road" or "Wenxin Road Section 3"
     const abbr = (n) => {
-      const m = n.match(/^Section (\d+),\s*(.+)$/i);
-      const base = (m ? m[2] : n).replace(/\bRoad\b/g, "Rd").replace(/\bStreet\b/g, "St").replace(/\bBoulevard\b/g, "Blvd").replace(/\bAvenue\b/g, "Ave");
-      return m ? `${base} Sec. ${m[1]}` : base;
+      let base = n, sec = null, m;
+      if ((m = n.match(/^Section (\d+),\s*(.+)$/i))) [base, sec] = [m[2], m[1]];
+      else if ((m = n.match(/^(.+?),?\s+Section (\d+)$/i))) [base, sec] = [m[1], m[2]];
+      base = base.replace(/\bRoad\b/g, "Rd").replace(/\bStreet\b/g, "St").replace(/\bBoulevard\b/g, "Blvd").replace(/\bAvenue\b/g, "Ave");
+      return sec ? `${base} Sec. ${sec}` : base;
     };
     const best = new Map();
     for (const f of ROADS.features) {
@@ -1543,11 +1546,14 @@ h3.mini .zh { text-transform: none; letter-spacing: 0.02em; }
     const [lon, lat] = unproj(pcx + adj.dx, pcy + adj.dy);
     // drawing points spread over the plan; their adjusted positions pin down the new transform
     const pins = [[158, 221], [175, 115], [40, 175], [215, 80]];
+    // the adjusted position of the drawing origin is the new translation in the local plane
+    const [olon, olat] = adjusted(...fromDrawing(0, 0));
     return {
-      for: "scripts/georef_plan.py (SCALE, ROTATION_DEG, CONTROL)",
+      for: "scripts/georef_plan.py (SCALE, ROTATION_DEG, TRANSLATION_M)",
       scale_m_per_mm: +(G.scale_m_per_mm * adj.scale).toFixed(3),
       rotation_deg: +(G.rotation_deg + adj.rot).toFixed(2),
-      control: pins.map(([x, y]) => {
+      translation_m: [+((olon - G.local_origin[0]) * G.m_per_deg[0]).toFixed(1), +((olat - G.local_origin[1]) * G.m_per_deg[1]).toFixed(1)],
+      pins: pins.map(([x, y]) => {
         const [plon, plat] = adjusted(...fromDrawing(x, y));
         return { drawing_mm: [x, y], lon: +plon.toFixed(7), lat: +plat.toFixed(7) };
       }),
@@ -1707,7 +1713,7 @@ h3.mini .zh { text-transform: none; letter-spacing: 0.02em; }
     `Boundaries: ${esc(DATA.boundary_source)}`,
     `Boundaries are simplified (about ${vertexCount} vertices for ${villages.length} villages). Use them for context, not for measurement or precise overlay. Areas come from the attribute table.`,
     `Land use: ${esc(src)}`,
-    `Detailed plan overlay: ${esc(G.source)}. Placed by a similarity transform (scale ${G.scale_m_per_mm} m per drawing mm from the zone areas, rotation ${G.rotation_deg}°, translation fitted to ${G.control_points.length} control points); ${esc(G.status)}.`,
+    `Detailed plan overlay: ${esc(G.source)}. Placed by a similarity transform fitted to OpenStreetMap road centrelines (scale ${G.scale_m_per_mm} m per drawing mm, matching the zone areas; rotation ${G.rotation_deg}°); ${esc(G.status)}.`,
     `Reference points: coordinates as published by the sources listed with each point (Wikipedia infoboxes, OurAirports).`,
     ...(DATA.roads ? [`Road network: © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors, ODbL 1.0; fetched ${esc(DATA.roads.fetched)} via the Overpass API and simplified to ${DATA.roads.simplify_tolerance_m} m. Local streets cover the Shuinan area only.`] : []),
     `Major projects: sources are listed with each entry. The Open / Upcoming chips are our grouping of the status text.`,

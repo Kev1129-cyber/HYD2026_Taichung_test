@@ -20,20 +20,24 @@
 
 ### 細部計畫疊圖（Detailed Plan Overlay）
 
-`data/raw/Figure_7-1_Detailed_Plan_A3_English_CAD.dxf`是畫在A3圖紙上的描圖（單位mm），本身沒有地理座標；檔頭的`$LATITUDE`／`$LONGITUDE`（37.795, -122.394）是AutoCAD預設的舊金山座標，與水湳無關。`scripts/georef_plan.py`以相似轉換把它放到WGS84上：
+`data/raw/Figure_7-1_Detailed_Plan_A3_English_CAD.dxf`是畫在A3圖紙上的描圖（單位mm），本身沒有地理座標；檔頭的`$LATITUDE`／`$LONGITUDE`（37.795, -122.394）是AutoCAD預設的舊金山座標，與水湳無關。`scripts/georef_plan.py`以相似轉換把它放到WGS84上，參數由`scripts/register_plan.py`對齊OSM道路中心線求得：
 
 | 參數 | 值 | 依據 |
 |---|---|---|
-| 比例 | 12.5 m／圖面mm（約1:12,500） | 五類分區色塊扣除重疊後的面積（7,906 mm²）對照計畫面積表（126.53 ha），各類介於12.24–12.87 m/mm；描邊略為內縮，故取12.5 |
-| 旋轉 | 0°（正北朝上） | 原水湳機場跑道18/36，方位175°–355°，接近南北向 |
-| 平移 | 以兩個控制點加權擬合 | 臺中綠美圖（中央公園北端）與市府公告的中央公園禁飛區中心，殘差約40與80公尺 |
+| 比例 | 12.52 m／圖面mm（約1:12,500） | 對齊OSM路網的結果；與分區色塊面積推算的12.24–12.87 m/mm一致 |
+| 旋轉 | 0.4°（幾乎正北朝上） | 對齊OSM路網的結果；與原水湳機場跑道18/36（175°–355°）一致 |
+| 平移 | (-1927.9, -1848.6) m | 對齊OSM路網的結果（局部平面原點120.654°E, 24.185°N） |
 
-定位誤差估計約100–200公尺。地圖側欄的 **Adjust position** 可以對照OSM底圖拖曳、旋轉、縮放疊圖，再按 **Copy parameters** 複製參數；把參數填回`georef_plan.py`的`SCALE`、`ROTATION_DEG`、`CONTROL`後重新執行：
+配準的原則是：街廓邊緣應距離道路約半個路寬，且不應有道路穿過街廓。對齊後，街廓邊緣到最近道路的中位距離為11公尺，觸及道路的街廓內部比例為3%（配準前分別為26公尺與12%），定位誤差估計在數十公尺內。最初只用綠美圖與禁飛區兩個控制點的估計偏西約210公尺，這兩點現在只作為參考檢核。
+
+地圖側欄的 **Adjust position** 仍可微調疊圖，**Copy parameters** 會輸出`SCALE`、`ROTATION_DEG`、`TRANSLATION_M`，填回`georef_plan.py`後重新執行：
 
 ```sh
 python3 scripts/georef_plan.py   # 產生 data/derived/shuinan_detailed_plan_traced.geojson
 python3 scripts/build_map.py
 ```
+
+路網更新後可重跑配準（需要`pip install numpy scipy shapely`）：`python3 scripts/register_plan.py`。
 
 色塊與分區的對應：生態住宅、文化商業、創新研發、經貿、文教區五類，以面積對照計畫面積表（誤差皆在7%以內）；公園、排水道與藍色色塊只依顏色慣例判斷。此圖為非官方英文參考版，以中文計畫書與官方圖資為準。
 
@@ -41,13 +45,13 @@ python3 scripts/build_map.py
 
 | 地點 | 緯度 | 經度 | 出處 |
 |---|---|---|---|
-| 細部計畫描圖範圍中心（概略） | 24.1859°N | 120.6489°E | 本repo定位結果 |
+| 細部計畫描圖範圍中心 | 24.1860°N | 120.6510°E | 本repo配準結果 |
 | 原水湳機場基準點 | 24.1863°N | 120.6540°E | OurAirports（RCLG） |
 | 臺中綠美圖 | 24.1929°N | 120.6524°E | 維基百科 |
 | 臺中國際會展中心 | 24.1939°N | 120.6514°E | 維基百科 |
 | 捷運綠線文華高中站 | 24.1714°N | 120.6606°E | 維基百科 |
 
-跑道南北兩端緯度為24.1786°N與24.1933°N（PilotNav）。描圖範圍約為120.6368–120.6610°E、24.1736–24.1982°N。
+跑道南北兩端緯度為24.1786°N與24.1933°N（PilotNav）。描圖範圍約為120.6389–120.6632°E、24.1737–24.1983°N。
 
 ## 路網圖（OSM）
 
@@ -120,6 +124,7 @@ templates/              頁面模板
 scripts/build_map.py    建置腳本
 scripts/georef_plan.py  細部計畫描圖定位
 scripts/fetch_roads.py  OSM路網抓取（由GitHub Actions執行）
+scripts/register_plan.py 細部計畫描圖對齊OSM路網
 data/raw/               原始資料
 data/derived/           定位後的細部計畫描圖、OSM路網
 ```

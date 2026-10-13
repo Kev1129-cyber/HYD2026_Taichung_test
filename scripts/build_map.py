@@ -59,7 +59,7 @@ DOWNLOADS = [
     (VILLAGES, "Xitun and Beitun village boundaries (81)", "西屯區、北屯區81個里界"),
     (ZONING, "Shuinan Airport site detailed plan: land-use areas (2024)", "水湳機場原址細部計畫土地使用分區面積"),
     (PROJECTS, "Shuinan park major projects and status (2026)", "水湳經貿園區重大建設進度"),
-    (PLAN, "Detailed plan trace, placed approximately (about 100–200 m error)", "細部計畫描圖（概略定位）"),
+    (PLAN, "Detailed plan trace, fitted to OSM roads (errors of a few tens of metres)", "細部計畫描圖（已對齊OSM路網）"),
     (PLAN_DXF, "Detailed plan, English reference CAD (A3 sheet units, not georeferenced)", "細部計畫圖英文參考版CAD"),
     (REFS, "Reference point coordinates and sources", "參考點座標與出處"),
     (ROADS, "Road and rail network from OpenStreetMap (ODbL)", "OSM路網（ODbL授權）"),
@@ -226,9 +226,9 @@ def landing_values(data):
         "Boundaries are simplified: use them for context, not for measurement or precise overlay.",
         f"Land-use areas: {html.escape(zoning_src)}",
         "Major projects: Taichung City Government project reports and news coverage; each row's source is in the CSV.",
-        "Detailed plan overlay: colour patches auto-traced from Figure 7-1 (unofficial English reference), scaled from the "
-        "zone areas and placed with the Green Museumbrary and the Central Park no-fly notices, so expect about "
-        "100–200 m of error. The Chinese plan and official GIS/CAD data prevail.",
+        "Detailed plan overlay: colour patches auto-traced from Figure 7-1 (unofficial English reference) and fitted to "
+        "OpenStreetMap road centrelines; block edges sit a median 11 m from the nearest road, so expect errors of a few "
+        "tens of metres. The Chinese plan and official GIS/CAD data prevail.",
         '<a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors</a>: basemap tiles, used under the '
         '<a href="https://operations.osmfoundation.org/policies/tiles/">OSM tile usage policy</a>, and the road network '
         '(Open Database License 1.0), fetched through the Overpass API.',

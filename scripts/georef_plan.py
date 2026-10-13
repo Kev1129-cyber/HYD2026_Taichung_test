@@ -4,20 +4,23 @@ The DXF is drawn on an A3 sheet in millimetres and carries no coordinate
 reference (its $LATITUDE/$LONGITUDE header values are AutoCAD's San Francisco
 defaults). This script places it with a similarity transform
 
-    ground metres = SCALE * drawing mm  (+ rotation)  + translation
+    ground metres = SCALE * R(ROTATION_DEG) * drawing mm + TRANSLATION_M
 
-where
-  * SCALE comes from the zone areas: the traced patches of the five land-use
-    special zones, de-overlapped, measure 7,906 mm^2 on the sheet against
-    126.53 ha in the plan's area table, i.e. ~12.65 m/mm (12.24-12.87 per zone);
-    traced outlines run slightly inside the true edges, so 12.5 m/mm is used;
-  * ROTATION is 0 (north up): runway 18/36 of the former airport ran 175-355
-    degrees, and the park that replaced it runs straight up the sheet;
-  * the translation is a weighted fit to two control points (see CONTROL).
+The parameters come from scripts/register_plan.py, which fits the traced
+blocks to OpenStreetMap road centrelines (data/derived/roads_osm.geojson):
+block edges should sit half a street from a road, and no road should cross a
+block. The fit lands where the independent estimates already pointed:
+  * scale ~12.5 m/mm, as the zone areas give (the traced patches of the five
+    land-use special zones, de-overlapped, measure 7,906 mm^2 against 126.53 ha
+    in the plan's area table: 12.24-12.87 m/mm per zone);
+  * rotation within half a degree of north-up, as runway 18/36 of the former
+    airport (175-355 degrees) suggests.
+After the fit the median distance from a block edge to the nearest road is
+11 m and 3% of block interiors touch a road (26 m and 12% before), so expect
+errors of a few tens of metres. CHECKS lists independent points for reference.
 
-Expect errors of roughly 100-200 m. The map page lets a viewer drag, rotate
-and scale the overlay against the OpenStreetMap basemap and copy the corrected
-parameters, which can be pasted back into CONTROL / SCALE / ROTATION_DEG.
+The map page also lets a viewer drag, rotate and scale the overlay and copy
+the parameters; paste them into SCALE / ROTATION_DEG / TRANSLATION_M.
 
 Usage:
     python3 scripts/georef_plan.py   # writes data/derived/shuinan_detailed_plan_traced.geojson
@@ -38,15 +41,19 @@ LON0, LAT0 = 120.654, 24.185
 M_PER_DEG_LON = 101606.0
 M_PER_DEG_LAT = 110761.0
 
-SCALE = 12.5          # ground metres per drawing millimetre
-ROTATION_DEG = 0.0    # counter-clockwise, drawing -> ground
+# From scripts/register_plan.py (fit to OSM roads fetched 2026-10-13).
+SCALE = 12.52                       # ground metres per drawing millimetre
+ROTATION_DEG = 0.4                  # counter-clockwise, drawing -> ground
+TRANSLATION_M = (-1927.9, -1848.6)  # in the local plane below; None = fit to CHECKS instead
 
-# (drawing x mm, drawing y mm), (lon, lat), weight, description
-CONTROL = [
+# Independent points, reported as residuals (and used for the fit only when
+# TRANSLATION_M is None): (drawing x mm, drawing y mm), (lon, lat), weight, description.
+# The first estimate placed the plan from these two alone, about 210 m too far west.
+CHECKS = [
     ((158.0, 221.0), (120.6523765, 24.1929213), 2.0,
-     "Taichung Green Museumbrary (Chinese Wikipedia) at the north end of the traced Central Park"),
+     "Taichung Green Museumbrary (Chinese Wikipedia) against the north end of the traced Central Park"),
     ((175.0, 115.0), (120.6541, 24.1820), 1.0,
-     "Mean centre of two Central Park no-fly zones in Taichung City notices, on the park's wide lawn"),
+     "Mean centre of two Central Park no-fly zones in Taichung City notices, against the park's wide lawn"),
 ]
 
 # Traced colour layers -> likely land-use class. The first five are matched by
@@ -111,9 +118,11 @@ def read_lwpolylines(path):
 
 
 def fit_translation():
+    if TRANSLATION_M is not None:
+        return TRANSLATION_M
     c, s = math.cos(math.radians(ROTATION_DEG)), math.sin(math.radians(ROTATION_DEG))
     tx = ty = wsum = 0.0
-    for (dx, dy), (lon, lat), w, _ in CONTROL:
+    for (dx, dy), (lon, lat), w, _ in CHECKS:
         gx, gy = (lon - LON0) * M_PER_DEG_LON, (lat - LAT0) * M_PER_DEG_LAT
         rx, ry = SCALE * (c * dx - s * dy), SCALE * (s * dx + c * dy)
         tx += w * (gx - rx)
@@ -132,7 +141,7 @@ def main():
         return [round(LON0 + gx / M_PER_DEG_LON, 7), round(LAT0 + gy / M_PER_DEG_LAT, 7)]
 
     residuals = []
-    for (dx, dy), (lon, lat), w, desc in CONTROL:
+    for (dx, dy), (lon, lat), w, desc in CHECKS:
         plon, plat = to_lonlat(dx, dy)
         residuals.append({
             "description": desc, "drawing_mm": [dx, dy], "lon": lon, "lat": lat, "weight": w,
@@ -162,17 +171,19 @@ def main():
         "type": "FeatureCollection",
         "name": "shuinan_detailed_plan_traced",
         "georeference": {
-            "status": "approximate: expect errors of roughly 100-200 m",
+            "status": "registered to OpenStreetMap road centrelines: expect errors of a few tens of metres",
             "source": "Figure 7-1 Detailed Plan after the Second Comprehensive Review (English reference, unofficial), "
                       "auto-traced colour patches; the Chinese plan and authoritative GIS/CAD data prevail",
-            "method": "similarity transform; scale from zone areas, rotation from the north-south runway, "
-                      "translation fitted to control points",
+            "method": "similarity transform fitted to OpenStreetMap road centrelines (block edges half a street "
+                      "from a road, no road through a block); agrees with the zone-area scale and north-up runway",
+            "fit": {"median_edge_to_road_m": 11, "block_interiors_touching_road": 0.03,
+                    "before_fit": {"median_edge_to_road_m": 26, "block_interiors_touching_road": 0.12}},
             "local_origin": [LON0, LAT0],
             "m_per_deg": [M_PER_DEG_LON, M_PER_DEG_LAT],
             "scale_m_per_mm": SCALE,
             "rotation_deg": ROTATION_DEG,
             "translation_m": [round(tx, 2), round(ty, 2)],
-            "control_points": residuals,
+            "checks": residuals,
             "bbox": [min(lons), min(lats), max(lons), max(lats)],
         },
         "classes": {k: {"en": v[0], "zh": v[1], "swatch": v[2], "matched_by_area": v[3]} for k, v in CLASS_INFO.items()},
@@ -182,7 +193,7 @@ def main():
     OUT.write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
     print(f"wrote {OUT.relative_to(ROOT)}: {len(features)} patches, bbox {out['georeference']['bbox']}")
     for r in residuals:
-        print(f"  control residual {r['residual_m']} m  ({r['description'][:48]}...)")
+        print(f"  check residual {r['residual_m']} m  ({r['description'][:48]}...)")
 
 
 if __name__ == "__main__":
