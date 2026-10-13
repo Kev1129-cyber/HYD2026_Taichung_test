@@ -555,6 +555,60 @@ h2 .zh.block { margin-top: 3px; }
 .sources { margin: 0; padding-left: 1.1em; font-size: var(--fs-xs); color: var(--ink-2); display: grid; gap: 6px; }
 .sources a { color: inherit; text-underline-offset: 2px; }
 
+/* detailed plan overlay + reference points */
+.plan-patch {
+  stroke: var(--ink);
+  stroke-opacity: 0.55;
+  stroke-width: 0.5;
+  vector-effect: non-scaling-stroke;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+#map.aligning { cursor: move; }
+.ref-hit { fill: transparent; cursor: help; }
+.ref-dia { fill: var(--ink); stroke: var(--surface); stroke-width: 2px; paint-order: stroke; pointer-events: none; }
+.ref-label {
+  font: 600 11px var(--font-body);
+  fill: var(--ink);
+  paint-order: stroke;
+  stroke: var(--surface);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+.plan-legend {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--fs-xs);
+  line-height: 1.3;
+}
+.plan-legend li { display: grid; grid-template-columns: 14px 1fr; gap: 0 6px; align-items: start; }
+.plan-legend .sw { width: 14px; height: 10px; margin-top: 2px; border: 1px solid var(--ink); opacity: 0.85; }
+.plan-legend .zh { grid-column: 2; margin-left: 0; }
+.plan-ctrl { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 4px 10px; margin-top: 12px; font-size: var(--fs-sm); }
+.plan-ctrl input[type="range"] { width: 100%; accent-color: var(--accent); }
+.plan-ctrl output { font: 500 11px var(--font-mono); color: var(--ink-2); min-width: 4.5em; text-align: right; }
+.btn-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.btn-s {
+  padding: 5px 11px;
+  background: var(--field);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  font-size: var(--fs-sm);
+  cursor: pointer;
+}
+.btn-s:hover { border-color: var(--ink); }
+.btn-s[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+#adj-out { width: 100%; min-height: 9em; margin-top: 8px; padding: 6px; font: 11px/1.4 var(--font-mono); background: var(--field); color: var(--ink); border: 1px solid var(--rule); }
+h3.mini { margin: 16px 0 6px; font: 500 10.5px var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+h3.mini .zh { text-transform: none; letter-spacing: 0.02em; }
+.refs { display: grid; gap: 7px; margin: 0; padding: 0; list-style: none; font-size: var(--fs-sm); }
+.refs .src { font-size: var(--fs-xs); color: var(--muted); }
+
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
 }
@@ -578,11 +632,13 @@ h2 .zh.block { margin-top: 3px; }
         <g clip-path="url(#clip)">
           <g id="world">
             <g id="g-v"></g>
+            <g id="g-plan"></g>
             <g id="g-d"></g>
             <path class="hover-outline" id="hover-outline"></path>
             <path class="sel-outline" id="sel-outline"></path>
           </g>
           <g id="g-labels"></g>
+          <g id="g-refs"></g>
         </g>
         <rect class="neatline" id="neatline"></rect>
         <g id="g-ticks"></g>
@@ -613,6 +669,8 @@ h2 .zh.block { margin-top: 3px; }
           <label><input type="checkbox" id="lyr-fill" checked>District tint<span class="zh" lang="zh-Hant-TW">區底色</span></label>
           <label><input type="checkbox" id="lyr-vline" checked>Village lines<span class="zh" lang="zh-Hant-TW">里界</span></label>
           <label><input type="checkbox" id="lyr-vlabel" checked>Village names<span class="zh" lang="zh-Hant-TW">里名</span></label>
+          <label><input type="checkbox" id="lyr-plan" checked>Detailed plan<span class="zh" lang="zh-Hant-TW">細部計畫</span></label>
+          <label><input type="checkbox" id="lyr-refs" checked>Reference points<span class="zh" lang="zh-Hant-TW">參考點</span></label>
         </div>
         <p class="note" id="osm-msg" hidden></p>
         <p class="note">Click a district in the legend to zoom to it. Village names appear as you zoom in.</p>
@@ -630,6 +688,43 @@ h2 .zh.block { margin-top: 3px; }
         <div class="sel-card" id="sel-card" aria-live="polite">
           <p class="hint">Click any village on the map, or search above, to see its area and code.</p>
         </div>
+      </section>
+
+      <section aria-labelledby="h-plan">
+        <h2 id="h-plan">Detailed Plan Overlay<span class="zh block" lang="zh-Hant-TW">細部計畫疊圖</span></h2>
+        <p class="sub">Traced from Figure 7-1 of the second comprehensive review (unofficial English reference) and placed by estimate. Expect errors of about 100–200 m until it is checked against the basemap.</p>
+        <ul class="plan-legend" id="plan-legend"></ul>
+        <p class="note">* Matched by area against the plan's land-use table. Park, drainage and blue patches follow colour conventions only.</p>
+        <div class="plan-ctrl">
+          <label for="plan-opacity">Opacity</label>
+          <input type="range" id="plan-opacity" min="0.1" max="1" step="0.05" value="0.7">
+          <output id="plan-opacity-v" for="plan-opacity">70%</output>
+        </div>
+        <dl class="kv">
+          <dt>Plan centre</dt><dd class="mono" id="plan-centre"></dd>
+          <dt>Scale</dt><dd class="mono" id="plan-scale"></dd>
+          <dt>Rotation</dt><dd class="mono" id="plan-rot"></dd>
+        </dl>
+        <div class="btn-row">
+          <button type="button" class="btn-s" id="adj-toggle" aria-pressed="false">Adjust position</button>
+          <button type="button" class="btn-s" id="adj-reset">Reset</button>
+          <button type="button" class="btn-s" id="adj-copy">Copy parameters</button>
+        </div>
+        <div id="adj-panel" hidden>
+          <p class="note">Drag the map to move the overlay, then rotate and scale until its roads and park edges sit on the basemap.</p>
+          <div class="plan-ctrl">
+            <label for="adj-rot">Rotate</label>
+            <input type="range" id="adj-rot" min="-10" max="10" step="0.1" value="0">
+            <output id="adj-rot-v" for="adj-rot">0.0°</output>
+            <label for="adj-scale">Scale</label>
+            <input type="range" id="adj-scale" min="85" max="115" step="0.1" value="100">
+            <output id="adj-scale-v" for="adj-scale">100.0%</output>
+          </div>
+        </div>
+        <p class="note" id="adj-msg" role="status"></p>
+        <textarea id="adj-out" hidden readonly aria-label="Overlay parameters"></textarea>
+        <h3 class="mini">Reference points<span class="zh" lang="zh-Hant-TW">參考點</span></h3>
+        <ul class="refs" id="refs-list"></ul>
       </section>
 
       <section aria-labelledby="h-zoning">
@@ -852,6 +947,7 @@ h2 .zh.block { margin-top: 3px; }
       v.labelEl.classList.toggle("is-sel", isSel);
       if (vis) placeLabel(v.labelEl, sx, sy, isSel ? 7 : 6, isSel ? 8 : 7);
     }
+    drawRefs();
     drawTicks();
     drawScale();
     if (layers.osm) updateTiles();
@@ -1070,7 +1166,8 @@ h2 .zh.block { margin-top: 3px; }
     ptrs.set(e.pointerId, p);
     svg.setPointerCapture(e.pointerId);
     if (ptrs.size === 1) {
-      drag = { x0: p.x, y0: p.y, tx0: view.tx, ty0: view.ty, moved: false, target: e.target };
+      drag = { x0: p.x, y0: p.y, tx0: view.tx, ty0: view.ty, moved: false, target: e.target,
+        align: aligning, adx: adj.dx, ady: adj.dy };
     } else if (ptrs.size === 2) {
       startPinch();
     }
@@ -1093,24 +1190,39 @@ h2 .zh.block { margin-top: 3px; }
       const dx = p.x - drag.x0, dy = p.y - drag.y0;
       if (!drag.moved && Math.hypot(dx, dy) > 4) { drag.moved = true; svg.classList.add("dragging"); hideTip(); setHot(null); }
       if (drag.moved) {
-        interacted = true;
-        view = { k: view.k, tx: drag.tx0 + dx, ty: drag.ty0 + dy };
-        draw();
+        if (drag.align) {
+          // align mode: the drag moves the plan overlay, not the map
+          adj.dx = drag.adx + dx / view.k;
+          adj.dy = drag.ady + dy / view.k;
+          applyAdj();
+        } else {
+          interacted = true;
+          view = { k: view.k, tx: drag.tx0 + dx, ty: drag.ty0 + dy };
+          draw();
+        }
       }
       return;
     }
     // plain hover (mouse / pen)
     updateCoord(p);
-    const v = e.target.__v || null;
+    const ref = e.target.__ref || null;
+    const v = ref || aligning ? null : e.target.__v || null;
     setHot(v);
-    if (v && e.pointerType !== "touch") showVillageTip(v, e.clientX, e.clientY); else hideTip();
+    if (e.pointerType === "touch") hideTip();
+    else if (ref) showRefTip(ref, e.clientX, e.clientY);
+    else if (v) showVillageTip(v, e.clientX, e.clientY);
+    else hideTip();
   });
   const endPointer = (e) => {
     if (!ptrs.has(e.pointerId)) return;
     ptrs.delete(e.pointerId);
-    if (drag && !drag.moved && e.type === "pointerup") {
-      const v = drag.target && drag.target.__v;
-      select(v && v !== selected ? v : null);
+    if (drag && !drag.moved && e.type === "pointerup" && !drag.align) {
+      if (drag.target && drag.target.__ref) {
+        showRefTip(drag.target.__ref, e.clientX, e.clientY);
+      } else {
+        const v = drag.target && drag.target.__v;
+        select(v && v !== selected ? v : null);
+      }
     }
     svg.classList.remove("dragging");
     if (ptrs.size === 1 && pinch) {
@@ -1228,6 +1340,150 @@ h2 .zh.block { margin-top: 3px; }
   bindLayer("#lyr-vline", "vline", "no-vline");
   bindLayer("#lyr-vlabel", "vlabel", null);
 
+  // ---------- detailed plan overlay ----------
+  // Patches come georeferenced from scripts/georef_plan.py. A viewer can nudge them
+  // (move / rotate / scale about the plan centre) and copy the result back.
+  const PLAN = DATA.plan, G = PLAN.georeference;
+  const gPlan = $("#g-plan");
+  for (const f of PLAN.features) svgEl("path", { d: geomPath(f.geometry), class: "plan-patch", fill: f.properties.fill }, gPlan);
+  const [pcx, pcy] = proj((G.bbox[0] + G.bbox[2]) / 2, (G.bbox[1] + G.bbox[3]) / 2);
+  const ADJ_KEY = "shuinan-plan-adjust-v1";
+  const ADJ0 = { dx: 0, dy: 0, rot: 0, scale: 1 };
+  let adj = { ...ADJ0 };
+  let aligning = false;
+  try {
+    const saved = JSON.parse(localStorage.getItem(ADJ_KEY) || "null");
+    if (saved && ["dx", "dy", "rot", "scale"].every((key) => Number.isFinite(saved[key]))) adj = saved;
+  } catch (err) { /* storage unavailable: start from the estimate */ }
+  const isAdjusted = () => adj.dx !== 0 || adj.dy !== 0 || adj.rot !== 0 || adj.scale !== 1;
+
+  // drawing mm -> lon/lat with the stored georeference, then the viewer's adjustment
+  const fromDrawing = (x, y) => {
+    const c = Math.cos(G.rotation_deg * RAD), s = Math.sin(G.rotation_deg * RAD);
+    const gx = G.scale_m_per_mm * (c * x - s * y) + G.translation_m[0];
+    const gy = G.scale_m_per_mm * (s * x + c * y) + G.translation_m[1];
+    return [G.local_origin[0] + gx / G.m_per_deg[0], G.local_origin[1] + gy / G.m_per_deg[1]];
+  };
+  const adjusted = (lon, lat) => {
+    let [x, y] = proj(lon, lat);
+    x = (x - pcx) * adj.scale; y = (y - pcy) * adj.scale;
+    const r = -adj.rot * RAD; // svg y points down, so a counter-clockwise turn is negative
+    return unproj(x * Math.cos(r) - y * Math.sin(r) + pcx + adj.dx, x * Math.sin(r) + y * Math.cos(r) + pcy + adj.dy);
+  };
+  const adjMsg = $("#adj-msg");
+  function applyAdj(save = true) {
+    gPlan.setAttribute("transform", `translate(${pcx + adj.dx} ${pcy + adj.dy}) rotate(${-adj.rot}) scale(${adj.scale}) translate(${-pcx} ${-pcy})`);
+    const [lon, lat] = unproj(pcx + adj.dx, pcy + adj.dy);
+    const scale = G.scale_m_per_mm * adj.scale;
+    $("#plan-centre").textContent = `${lat.toFixed(5)}°N, ${lon.toFixed(5)}°E`;
+    $("#plan-scale").textContent = `${scale.toFixed(2)} m per drawing mm (≈1:${Math.round(scale * 1000).toLocaleString("en-US")} on A3)`;
+    $("#plan-rot").textContent = `${(G.rotation_deg + adj.rot).toFixed(1)}° from north-up`;
+    $("#adj-rot").value = adj.rot;
+    $("#adj-scale").value = (adj.scale * 100).toFixed(1);
+    $("#adj-rot-v").textContent = `${adj.rot.toFixed(1)}°`;
+    $("#adj-scale-v").textContent = `${(adj.scale * 100).toFixed(1)}%`;
+    if (save) {
+      try { if (isAdjusted()) localStorage.setItem(ADJ_KEY, JSON.stringify(adj)); else localStorage.removeItem(ADJ_KEY); }
+      catch (err) { /* not persisted */ }
+    }
+  }
+  $("#plan-legend").innerHTML = Object.values(PLAN.classes).map((c) =>
+    `<li><span class="sw" style="background:${esc(c.swatch)}"></span><span>${esc(c.en)}${c.matched_by_area ? "*" : ""}</span>${zh(c.zh)}</li>`).join("");
+  const opacity = $("#plan-opacity");
+  const setOpacity = () => { gPlan.style.opacity = opacity.value; $("#plan-opacity-v").textContent = `${Math.round(opacity.value * 100)}%`; };
+  opacity.addEventListener("input", setOpacity);
+  setOpacity();
+  $("#lyr-plan").addEventListener("change", (e) => { gPlan.style.display = e.target.checked ? "" : "none"; });
+
+  function setAligning(on) {
+    aligning = on;
+    $("#adj-toggle").setAttribute("aria-pressed", String(on));
+    $("#adj-toggle").textContent = on ? "Done adjusting" : "Adjust position";
+    $("#adj-panel").hidden = !on;
+    svg.classList.toggle("aligning", on);
+    if (on) {
+      $("#lyr-plan").checked = true;
+      gPlan.style.display = "";
+      setHot(null);
+    }
+  }
+  $("#adj-toggle").addEventListener("click", () => setAligning(!aligning));
+  $("#adj-rot").addEventListener("input", (e) => { adj.rot = +e.target.value; applyAdj(); });
+  $("#adj-scale").addEventListener("input", (e) => { adj.scale = +e.target.value / 100; applyAdj(); });
+  $("#adj-reset").addEventListener("click", () => {
+    adj = { ...ADJ0 };
+    applyAdj();
+    adjMsg.textContent = "Back to the estimated position.";
+  });
+  function exportParams() {
+    const [lon, lat] = unproj(pcx + adj.dx, pcy + adj.dy);
+    // drawing points spread over the plan; their adjusted positions pin down the new transform
+    const pins = [[158, 221], [175, 115], [40, 175], [215, 80]];
+    return {
+      for: "scripts/georef_plan.py (SCALE, ROTATION_DEG, CONTROL)",
+      scale_m_per_mm: +(G.scale_m_per_mm * adj.scale).toFixed(3),
+      rotation_deg: +(G.rotation_deg + adj.rot).toFixed(2),
+      control: pins.map(([x, y]) => {
+        const [plon, plat] = adjusted(...fromDrawing(x, y));
+        return { drawing_mm: [x, y], lon: +plon.toFixed(7), lat: +plat.toFixed(7) };
+      }),
+      plan_centre: { lat: +lat.toFixed(6), lon: +lon.toFixed(6) },
+    };
+  }
+  $("#adj-copy").addEventListener("click", () => {
+    const text = JSON.stringify(exportParams(), null, 2);
+    const out = $("#adj-out");
+    const showText = () => {
+      out.hidden = false;
+      out.value = text;
+      out.focus();
+      out.select();
+      adjMsg.textContent = "Copy the parameters below and send them back to update the overlay data.";
+    };
+    try {
+      navigator.clipboard.writeText(text).then(() => {
+        out.hidden = true;
+        adjMsg.textContent = "Parameters copied. Send them back to update the overlay data.";
+      }, showText);
+    } catch (err) { showText(); }
+  });
+  applyAdj(false);
+  if (isAdjusted()) adjMsg.textContent = "Showing the adjustment saved in this browser. Reset returns to the estimate.";
+
+  // ---------- reference points ----------
+  const gRefs = $("#g-refs");
+  const refs = DATA.refs.map((r) => {
+    const lon = +r.lon, lat = +r.lat;
+    const [wx, wy] = proj(lon, lat);
+    const g = svgEl("g", {}, gRefs);
+    const hit = svgEl("circle", { class: "ref-hit", r: 10 }, g);
+    svgEl("path", { class: "ref-dia", d: "M0 -5.5 L5.5 0 L0 5.5 L-5.5 0 Z" }, g);
+    const label = svgEl("text", { class: "ref-label", x: 9, y: 4 }, g);
+    label.textContent = r.name_en.replace(/^MRT Green Line, /, "");
+    const ref = { ...r, lon, lat, wx, wy, g, label };
+    hit.__ref = ref;
+    return ref;
+  });
+  function drawRefs() {
+    const show = $("#lyr-refs").checked;
+    gRefs.style.display = show ? "" : "none";
+    if (!show) return;
+    const showLabels = view.k > fitK * 3.5;
+    for (const r of refs) {
+      r.g.setAttribute("transform", `translate(${view.k * r.wx + view.tx} ${view.k * r.wy + view.ty})`);
+      r.label.style.display = showLabels ? "" : "none";
+    }
+  }
+  $("#lyr-refs").addEventListener("change", draw);
+  function showRefTip(r, cx, cy) {
+    tip.innerHTML = `<b>${esc(r.name_en)}</b>${zh(r.name_zh)}<br>` +
+      `<span class="num">${r.lat.toFixed(5)}°N, ${r.lon.toFixed(5)}°E</span><br>${esc(r.source)}`;
+    placeTip(cx, cy);
+  }
+  $("#refs-list").innerHTML = refs.map((r) =>
+    `<li><b>${esc(r.name_en)}</b>${zh(r.name_zh)}<br><span class="mono">${r.lat.toFixed(5)}°N, ${r.lon.toFixed(5)}°E</span>` +
+    `<span class="src"> · ${esc(r.source)}</span></li>`).join("");
+
   // ---------- village lookup ----------
   const optLabel = (v) => `${v.en} ${v.zh} (${v.dist.short})`;
   const dl = $("#vlist");
@@ -1327,6 +1583,8 @@ h2 .zh.block { margin-top: 3px; }
     `Boundaries: ${esc(DATA.boundary_source)}`,
     `Boundaries are simplified (about ${vertexCount} vertices for ${villages.length} villages). Use them for context, not for measurement or precise overlay. Areas come from the attribute table.`,
     `Land use: ${esc(src)}`,
+    `Detailed plan overlay: ${esc(G.source)}. Placed by a similarity transform (scale ${G.scale_m_per_mm} m per drawing mm from the zone areas, rotation ${G.rotation_deg}°, translation fitted to ${G.control_points.length} control points); ${esc(G.status)}.`,
+    `Reference points: coordinates as published by the sources listed with each point (Wikipedia infoboxes, OurAirports).`,
     `Major projects: sources are listed with each entry. The Open / Upcoming chips are our grouping of the status text.`,
     `Coordinates: WGS84 (CRS84). The map uses Web Mercator to match the OpenStreetMap tiles; the scale bar uses the east-west scale at the center of the study area.`,
     ...(BASEMAP ? [`Basemap: © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors. Tiles from the OpenStreetMap Foundation, used under its <a href="https://operations.osmfoundation.org/policies/tiles/" target="_blank" rel="noopener">tile usage policy</a>.`] : []),

@@ -30,6 +30,10 @@ DISTRICTS = RAW / "context_xitun_beitun_districts.geojson"
 VILLAGES = RAW / "context_xitun_beitun_villages.geojson"
 ZONING = RAW / "shuinan_zoning_areas_2024.csv"
 PROJECTS = RAW / "shuinan_major_projects_2026.csv"
+REFS = RAW / "reference_points.csv"
+PLAN_DXF = RAW / "Figure_7-1_Detailed_Plan_A3_English_CAD.dxf"
+# Georeferenced trace of the detailed plan; regenerate with scripts/georef_plan.py.
+PLAN = ROOT / "data" / "derived" / "shuinan_detailed_plan_traced.geojson"
 
 # Status chip per project, keyed by project_zh in shuinan_major_projects_2026.csv:
 # "open" = opened / in use / in service / existing, "pending" = not yet open.
@@ -53,6 +57,9 @@ DOWNLOADS = [
     (VILLAGES, "西屯區、北屯區81個里界"),
     (ZONING, "水湳機場原址細部計畫土地使用分區面積（2024）"),
     (PROJECTS, "水湳經貿園區重大建設進度（2026）"),
+    (PLAN, "細部計畫描圖（已概略定位，誤差約100–200公尺）"),
+    (PLAN_DXF, "細部計畫圖英文參考版CAD（A3圖紙座標，未定位）"),
+    (REFS, "參考點座標與出處"),
 ]
 
 DATE_RE = re.compile(r"\d{4}-\d{2}-\d{2}")
@@ -113,6 +120,8 @@ def load_data():
         "zoning": zoning,
         "projects": projects,
         "boundary_source": boundary_source,
+        "plan": read_json(PLAN),
+        "refs": read_csv(REFS),
     }
 
 
@@ -211,6 +220,8 @@ def landing_values(data):
         "邊界為簡化版本，適合示意與脈絡判讀，不宜用於量測或精確套疊。",
         f"土地使用分區面積：{html.escape(zoning_src)}",
         "重大建設進度：臺中市政府專案報告與新聞報導，各列來源見CSV的source欄位。",
+        "細部計畫疊圖：由Figure 7-1英文參考版（非官方翻譯）自動描繪的色塊，依分區面積推算比例、"
+        "以綠美圖與中央公園禁飛區公告座標定位，誤差約100–200公尺；以中文計畫書與官方圖資為準。",
         '底圖：© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors，'
         '圖磚依<a href="https://operations.osmfoundation.org/policies/tiles/">OSM圖磚使用政策</a>使用。',
     ]
