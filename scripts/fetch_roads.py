@@ -1,8 +1,8 @@
 """Fetch the road and rail network for the study area from OpenStreetMap.
 
 Queries the Overpass API for
-  * major roads (motorway to tertiary, with their links) across the Xitun and
-    Beitun bounding box, plus rail, metro and light rail;
+  * major roads (motorway to tertiary, with their links) across the bounding
+    box of the former Taichung City (8 districts), plus rail, metro and light rail;
   * minor streets (residential, unclassified, living street, service roads
     excluded) only around the Shuinan site, where the plan overlay needs them;
 simplifies each line (Douglas-Peucker, 2.5 m) and writes
@@ -34,8 +34,8 @@ ENDPOINTS = [
 ]
 USER_AGENT = "HYD2026_Taichung base map (https://github.com/yunching0513/HYD2026_Taichung)"
 
-# (south, west, north, east): the two districts, padded by ~500 m
-STUDY_BBOX = (24.150, 120.579, 24.224, 120.807)
+# (south, west, north, east): the eight districts of the former Taichung City, padded by ~500 m
+STUDY_BBOX = (24.100, 120.570, 24.224, 120.808)
 # around the Shuinan site (traced plan bbox, padded by ~800 m)
 SITE_BBOX = (24.166, 120.629, 24.206, 120.669)
 

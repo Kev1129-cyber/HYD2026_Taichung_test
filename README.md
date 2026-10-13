@@ -1,6 +1,6 @@
 # HYD2026_Taichung
 
-Research data and maps for the area around the Shuinan Economic and Trade Park, Taichung, prepared for #HackYourDistrict 2026.
+Research data and maps for the former Taichung City and the Shuinan Economic and Trade Park, prepared for #HackYourDistrict 2026.
 
 Live site (GitHub Pages): https://yunching0513.github.io/HYD2026_Taichung/
 
@@ -8,11 +8,12 @@ Live site (GitHub Pages): https://yunching0513.github.io/HYD2026_Taichung/
 
 ## Outputs
 
-### Xitun & Beitun Base Map (`map/index.html`)
+### Former Taichung City Base Map (`map/index.html`)
 
 The interface is English-first, with Chinese as the secondary language: map labels, legend and side panels are in English, and village, district, zone, project and road names carry their Chinese names. The village search accepts English or Chinese.
 
-- District boundaries and the 81 village boundaries of Xitun and Beitun on an OpenStreetMap basemap, tinted by district
+- The 8 districts and 214 villages of the former Taichung City on an OpenStreetMap basemap; the 5 old-downtown districts (Central, East, South, West, North) carry a darker tint and a merged outline, Xitun, Nantun and Beitun a lighter one
+- Three colour themes from the switch in the header: **Paper** (the workshop deck's warm grey, the default in light mode), **White** and **Dark** (the default in dark mode); the choice is remembered in the browser and shared with the landing page
 - Pan by dragging, zoom with the wheel or a pinch; arrow keys pan, `+` / `-` zoom, `0` shows the full extent
 - Hover a village for its name and area; click or search to see its area, share of the district, area rank and village code
 - Road network from OpenStreetMap, with English and Chinese road names along the arterials
@@ -77,7 +78,7 @@ The runway thresholds lay at 24.1786°N and 24.1933°N (PilotNav). The traced pl
 
 ## Road network and landmarks (OpenStreetMap)
 
-The **Road network** layer covers motorways down to tertiary roads, rail and metro across Xitun and Beitun, plus local streets around Shuinan (shown when zoomed in).
+The **Road network** layer covers motorways down to tertiary roads, rail and metro across the former Taichung City, plus local streets around Shuinan (shown when zoomed in).
 
 This build environment cannot reach the Overpass API, so a GitHub Actions workflow fetches the data: **Actions → Fetch OSM road network → Run workflow** runs `scripts/fetch_roads.py`, `scripts/fetch_landmarks.py` and `scripts/locate_projects.py`, rebuilds the site and commits the results. Run it again to refresh. The data is licensed under the ODbL 1.0 and must be credited "© OpenStreetMap contributors".
 
@@ -126,8 +127,13 @@ The script uses only the Python standard library. It inlines the GeoJSON and CSV
 
 | File | Contents | Source |
 |---|---|---|
-| `data/raw/context_xitun_beitun_districts.geojson` | Xitun and Beitun district boundaries | MOI district boundaries (2025-03-18) and NLSC village boundaries (2026-08-17), processed with plotdb/pdmaptw v2.4.0; Open Government Data License v1.0 |
-| `data/raw/context_xitun_beitun_villages.geojson` | 81 village boundaries | As above |
+| `data/raw/former_city_8_districts.geojson` | 8 district boundaries of the former Taichung City | MOI district boundaries (2025-03-18) and NLSC village boundaries (2026-08-17), processed with plotdb/pdmaptw v2.4.0; Open Government Data License v1.0 |
+| `data/raw/former_city_villages.geojson` | 214 village boundaries (the map's source) | As above |
+| `data/raw/former_city_villages.csv` | Village attribute table, 214 rows | As above |
+| `data/raw/old_downtown_5_districts.geojson` | Old downtown: 5 district boundaries | Subset of the former-city file |
+| `data/raw/old_downtown_villages.geojson` | Old downtown: 108 village boundaries | Subset of the former-city file |
+| `data/raw/context_xitun_beitun_districts.geojson` | Xitun and Beitun district boundaries | Subset of the former-city file |
+| `data/raw/context_xitun_beitun_villages.geojson` | Xitun and Beitun: 81 village boundaries | Subset of the former-city file |
 | `data/raw/shuinan_zoning_areas_2024.csv` | Zone areas of the Shuinan Airport site detailed plan | Urban Development Bureau, Taichung City Government: public briefing for the 2nd comprehensive review (2024-02-01) |
 | `data/raw/shuinan_major_projects_2026.csv` | Status of major projects in the park | Taichung City Government project reports (2025-09-30, 2026-08-03) and news coverage; see each row's `source` |
 | `data/raw/Figure_7-1_Detailed_Plan_A3_English_CAD.dxf` | Detailed plan, unofficial English reference trace | A3 sheet units, not georeferenced |
@@ -139,7 +145,9 @@ The script uses only the Python standard library. It inlines the GeoJSON and CSV
 
 Notes:
 
-- Boundaries are simplified (about 800 vertices for the 81 villages): use them for context, not for measurement or precise overlay. Areas come from the attribute table.
+- Boundaries are simplified (about 1,800 vertices for the 214 villages): use them for context, not for measurement or precise overlay. Areas come from the attribute table.
+- The old-downtown and Xitun–Beitun files match the former-city files feature for feature (same geometry and attributes); the build reads the former-city files and warns if a subset drifts. The old downtown is the set of districts flagged `old_downtown`.
+- Futai Village (富台里, East District, 0.052 km²) has no geometry in the source files. The map draws it as a dashed circle of the same area at its label point and says so in the village card.
 - Coordinates are WGS84 longitude and latitude (CRS84).
 
 ## Layout
@@ -162,15 +170,16 @@ data/derived/             fitted plan trace, OSM roads and landmarks, project lo
 
 ## 中文說明
 
-臺中市水湳經貿園區周邊研究資料與地圖，為 #HackYourDistrict 2026 準備。
+原臺中市與水湳經貿園區的研究資料與地圖，為#HackYourDistrict 2026準備。
 
 線上瀏覽（GitHub Pages）：https://yunching0513.github.io/HYD2026_Taichung/
 
 ### 成果
 
-**西屯・北屯基本圖（`map/index.html`）**：介面以英文為主、中文為輔，里名、區名、分區、建設與路名都附上中文，搜尋可輸入英文或中文里名。
+**原臺中市基本圖（`map/index.html`）**：介面以英文為主、中文為輔，里名、區名、分區、建設與路名都附上中文，搜尋可輸入英文或中文里名。
 
-- 西屯區、北屯區的區界與81個里界，疊在OpenStreetMap底圖上，區底色區分行政區
+- 原臺中市8區、214里的界線，疊在OpenStreetMap底圖上；舊市區5區（中、東、南、西、北區）用較深的底色並加上合併外框，西屯、南屯、北屯用較淺的底色
+- 頁首可切換三種主題：**Paper**米白（工作坊簡報的暖灰，淺色模式預設）、**White**白色、**Dark**深色（深色模式預設），選擇會記在瀏覽器中，並與成果首頁同步
 - 拖曳平移、滾輪或雙指縮放；方向鍵平移、`+`／`-`縮放、`0`回到全圖
 - 滑過里顯示名稱與面積；點選或搜尋里名可查看面積、占行政區比例、面積排序與村里代碼
 - OSM路網，主要道路沿線標示英文與中文路名
@@ -187,7 +196,7 @@ DXF是畫在A3圖紙上的描圖（單位mm），本身沒有地理座標；檔�
 
 對齊後，街廓邊緣到最近道路的中位距離為11公尺，觸及道路的街廓內部比例為3%（配準前為26公尺與12%），誤差估計在數十公尺內。兩項獨立檢核都吻合：OSM標註的綠美圖基地距離描圖中央公園北端約55公尺，OSM的超巨蛋基地輪廓與描圖的創研街廓重合。最初的估計偏西約210公尺，原因是維基百科的綠美圖座標比實際基地偏西約210公尺。
 
-地圖側欄的 **Adjust position** 可微調疊圖，**Copy parameters** 會輸出`SCALE`、`ROTATION_DEG`、`TRANSLATION_M`，填回`georef_plan.py`後執行上方兩行指令重建。路網更新後可重跑`python3 scripts/register_plan.py`（需`pip install numpy scipy shapely`）。
+地圖側欄的**Adjust position**可微調疊圖，**Copy parameters**會輸出`SCALE`、`ROTATION_DEG`、`TRANSLATION_M`，填回`georef_plan.py`後執行上方兩行指令重建。路網更新後可重跑`python3 scripts/register_plan.py`（需`pip install numpy scipy shapely`）。
 
 生態住宅、文化商業、創新研發、經貿、文教區五類色塊以面積對照計畫面積表（誤差皆在7%以內）；公園、排水道與藍色色塊只依顏色慣例判斷。此圖為非官方英文參考版，以中文計畫書與官方圖資為準。
 
@@ -197,7 +206,7 @@ DXF是畫在A3圖紙上的描圖（單位mm），本身沒有地理座標；檔�
 
 ### 路網與地標（OSM）
 
-路網涵蓋西屯、北屯的國道到區道、鐵路與捷運，以及水湳周邊巷道（放大後顯示）。本環境連不到Overpass API，因此由GitHub Actions抓取：**Actions → Fetch OSM road network → Run workflow**，會依序執行`fetch_roads.py`、`fetch_landmarks.py`、`locate_projects.py`，重建網站並commit結果。資料授權為ODbL 1.0，須標示「© OpenStreetMap contributors」。
+路網涵蓋原臺中市範圍的國道到區道、鐵路與捷運，以及水湳周邊巷道（放大後顯示）。本環境連不到Overpass API，因此由GitHub Actions抓取：**Actions → Fetch OSM road network → Run workflow**，會依序執行`fetch_roads.py`、`fetch_landmarks.py`、`locate_projects.py`，重建網站並commit結果。資料授權為ODbL 1.0，須標示「© OpenStreetMap contributors」。
 
 ### OpenStreetMap底圖
 
@@ -205,7 +214,7 @@ DXF是畫在A3圖紙上的描圖（單位mm），本身沒有地理座標；檔�
 
 ### 發布到GitHub Pages
 
-到 **Settings → Pages**，**Source** 選 **Deploy from a branch**，**Branch** 選`claude/gracious-ride-hxhf3w`、資料夾`/ (root)`，按 **Save**。約一分鐘後網站上線，之後每次push都會自動更新。若日後改用`main`，記得同步更改發布分支。
+到**Settings → Pages**，**Source**選**Deploy from a branch**，**Branch**選`claude/gracious-ride-hxhf3w`、資料夾`/ (root)`，按**Save**。約一分鐘後網站上線，之後每次push都會自動更新。若日後改用`main`，記得同步更改發布分支。
 
 ### 重新建置
 
@@ -213,4 +222,6 @@ DXF是畫在A3圖紙上的描圖（單位mm），本身沒有地理座標；檔�
 
 ### 資料與注意事項
 
-各檔案的內容與來源見上方英文的Data表格。邊界為簡化版本（81里合計約800個頂點），適合示意與脈絡判讀，不宜用於量測或精確套疊；座標系統為WGS84經緯度（CRS84）。
+各檔案的內容與來源見上方英文的Data表格。地圖以原臺中市8區、214里的檔案為準；舊市區與西屯、北屯的檔案是它的子集，幾何與屬性完全相同，建置時若不一致會發出警告。邊界為簡化版本（214里合計約1,800個頂點），適合示意與脈絡判讀，不宜用於量測或精確套疊；座標系統為WGS84經緯度（CRS84）。
+
+東區富台里（0.052平方公里）在原始檔中沒有邊界，地圖在其標籤點以等面積的虛線圓表示，並在里別資訊中註明。

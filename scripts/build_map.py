@@ -1,8 +1,10 @@
 """Build the static site: the landing page (index.html) and the base map (map/index.html).
 
-Reads the district and village GeoJSON plus the two Shuinan CSV tables from
-data/raw, fills templates/index.html and templates/basemap.html, and writes
-self-contained HTML pages ready for GitHub Pages (deploy from branch, root).
+Reads the former Taichung City district and village GeoJSON (8 districts, 214
+villages; the old downtown is marked by the old_downtown flag) plus the
+Shuinan tables from data/raw, fills templates/index.html and
+templates/basemap.html, and writes self-contained HTML pages ready for GitHub
+Pages (deploy from branch, root).
 
 Usage:
     python3 scripts/build_map.py                     # writes index.html and map/index.html
@@ -26,8 +28,16 @@ TEMPLATES = ROOT / "templates"
 MAP_OUT = ROOT / "map" / "index.html"
 LANDING_OUT = ROOT / "index.html"
 
-DISTRICTS = RAW / "context_xitun_beitun_districts.geojson"
-VILLAGES = RAW / "context_xitun_beitun_villages.geojson"
+# The former-city files hold every boundary; the old-downtown and Xitun-Beitun files are subsets of them.
+DISTRICTS = RAW / "former_city_8_districts.geojson"
+VILLAGES = RAW / "former_city_villages.geojson"
+VILLAGE_TABLE = RAW / "former_city_villages.csv"
+SUBSETS = [
+    (RAW / "old_downtown_5_districts.geojson", "district_code"),
+    (RAW / "old_downtown_villages.geojson", "village_code"),
+    (RAW / "context_xitun_beitun_districts.geojson", "district_code"),
+    (RAW / "context_xitun_beitun_villages.geojson", "village_code"),
+]
 ZONING = RAW / "shuinan_zoning_areas_2024.csv"
 PROJECTS = RAW / "shuinan_major_projects_2026.csv"
 REFS = RAW / "reference_points.csv"
@@ -57,8 +67,13 @@ UNOFFICIAL = re.compile(r"\s*\(unofficial translation\)\s*$", re.I)
 
 # Landing-page download table: (file, English description, Chinese description).
 DOWNLOADS = [
-    (DISTRICTS, "Xitun and Beitun district boundaries", "西屯區、北屯區區界"),
-    (VILLAGES, "Xitun and Beitun village boundaries (81)", "西屯區、北屯區81個里界"),
+    (DISTRICTS, "Former Taichung City: 8 district boundaries", "原臺中市8區區界"),
+    (VILLAGES, "Former Taichung City: 214 village boundaries", "原臺中市214里里界"),
+    (VILLAGE_TABLE, "Village attribute table (214 rows)", "里別屬性表（214筆）"),
+    (SUBSETS[0][0], "Old downtown: 5 district boundaries (subset)", "舊市區5區區界（子集）"),
+    (SUBSETS[1][0], "Old downtown: 108 village boundaries (subset)", "舊市區108里里界（子集）"),
+    (SUBSETS[2][0], "Xitun and Beitun district boundaries (subset)", "西屯區、北屯區區界（子集）"),
+    (SUBSETS[3][0], "Xitun and Beitun: 81 village boundaries (subset)", "西屯區、北屯區81里里界（子集）"),
     (ZONING, "Shuinan Airport site detailed plan: land-use areas (2024)", "水湳機場原址細部計畫土地使用分區面積"),
     (PROJECTS, "Shuinan park major projects and status (2026)", "水湳經貿園區重大建設進度"),
     (PLAN, "Detailed plan trace, fitted to OSM roads (errors of a few tens of metres)", "細部計畫描圖（已對齊OSM路網）"),
@@ -81,9 +96,64 @@ def read_json(path):
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def read_geojson(path):
+    return json.loads(path.read_text(encoding="utf-8-sig"))
+
+
+def check_subsets(districts, villages):
+    """Warn if an old-downtown or Xitun-Beitun file no longer matches the former-city files."""
+    full = {"district_code": {f["properties"]["district_code"]: f for f in districts["features"]},
+            "village_code": {f["properties"]["village_code"]: f for f in villages["features"]}}
+    for path, key in SUBSETS:
+        if not path.exists():
+            continue
+        for f in read_geojson(path)["features"]:
+            g = full[key].get(f["properties"][key])
+            if g is None or g["geometry"] != f["geometry"] or g["properties"] != f["properties"]:
+                print(f"warning: {path.name}: {f['properties'][key]} differs from the former-city file")
+
+
+def dissolve(features):
+    """Outer rings of the union of polygons that share vertices along common edges.
+
+    An edge used by two polygons is interior and cancels; the remaining edges are
+    chained back into rings. Enough for these topologically clean boundaries.
+    """
+    count = {}
+    for f in features:
+        for poly in rings(f["geometry"]):
+            for ring in poly:
+                for a, b in zip(ring, ring[1:]):
+                    key = (min(tuple(a), tuple(b)), max(tuple(a), tuple(b)))
+                    count[key] = count.get(key, 0) + 1
+    nxt = {}
+    for f in features:
+        for poly in rings(f["geometry"]):
+            for ring in poly:
+                for a, b in zip(ring, ring[1:]):
+                    if count[(min(tuple(a), tuple(b)), max(tuple(a), tuple(b)))] == 1:
+                        nxt.setdefault(tuple(a), []).append(tuple(b))
+    out = []
+    while nxt:
+        start = next(iter(nxt))
+        ring, cur = [list(start)], start
+        while True:
+            b = nxt[cur].pop()
+            if not nxt[cur]:
+                del nxt[cur]
+            ring.append(list(b))
+            cur = b
+            if cur == start or cur not in nxt:
+                break
+        out.append(ring)
+    return out
+
+
 def load_data():
-    districts = read_json(DISTRICTS)
-    villages = read_json(VILLAGES)
+    districts = read_geojson(DISTRICTS)
+    villages = read_geojson(VILLAGES)
+    check_subsets(districts, villages)
+    old_outline = dissolve([f for f in districts["features"] if f["properties"].get("old_downtown")])
 
     zoning = []
     for row in read_csv(ZONING):
@@ -113,7 +183,7 @@ def load_data():
     keep_v = ("village_code", "village_zh", "village_en", "district_code",
               "district_zh", "district_en", "area_km2", "label_lon", "label_lat")
     keep_d = ("district_code", "district_zh", "district_en", "area_km2",
-              "village_count", "label_lon", "label_lat")
+              "village_count", "label_lon", "label_lat", "old_downtown")
     boundary_source = villages["features"][0]["properties"]["source"]
     for fc, keep in ((villages, keep_v), (districts, keep_d)):
         for f in fc["features"]:
@@ -126,6 +196,8 @@ def load_data():
         "zoning": zoning,
         "projects": projects,
         "boundary_source": boundary_source,
+        # rings of the five old-downtown districts merged into one outline
+        "old_downtown_outline": old_outline,
         "plan": read_json(PLAN),
         "refs": read_csv(REFS),
         "roads": read_json(ROADS) if ROADS.exists() else None,
@@ -192,19 +264,24 @@ def thumbnail_svg(data, width=560, pad=6):
                 out.append("".join(cmds) + "Z")
         return "".join(out)
 
-    order = {f["properties"]["district_code"]: i for i, f in enumerate(data["districts"]["features"])}
-    parts = [f'<path class="v d{order[f["properties"]["district_code"]]}" d="{path(f["geometry"])}"/>'
-             for f in data["villages"]["features"]]
+    # d0 = old downtown, d1 = the outer districts, as on the map
+    group = {f["properties"]["district_code"]: 0 if f["properties"].get("old_downtown") else 1
+             for f in data["districts"]["features"]}
+    parts = [f'<path class="v d{group[f["properties"]["district_code"]]}" d="{path(f["geometry"])}"/>'
+             for f in data["villages"]["features"] if f["geometry"]]
+    outline = {"type": "Polygon", "coordinates": data["old_downtown_outline"]}
+    parts.append(f'<path class="old" d="{path(outline)}"/>')
     parts += [f'<path class="dist" d="{path(f["geometry"])}"/>' for f in data["districts"]["features"]]
     return (f'<svg class="thumb" viewBox="0 0 {width} {height:.0f}" role="img" '
-            f'aria-label="Outline of the village boundaries in Xitun and Beitun">{"".join(parts)}</svg>')
+            f'aria-label="Outline of the district and village boundaries of the former Taichung City, '
+            f'with the old downtown marked">{"".join(parts)}</svg>')
 
 
 def landing_values(data):
     villages = data["villages"]["features"]
     districts = data["districts"]["features"]
     area = sum(f["properties"]["area_km2"] for f in districts)
-    names = " and ".join(f["properties"]["district_en"].replace(" District", "") for f in districts)
+    n_old = sum(1 for f in districts if f["properties"].get("old_downtown"))
 
     m = re.search(r"village boundaries \((\d{4}-\d{2}-\d{2})\)", data["boundary_source"])
     boundary_date = f"NLSC village boundaries, {m.group(1)}" if m else "NLSC village boundaries"
@@ -227,7 +304,10 @@ def landing_values(data):
 
     sources = [
         f"Boundaries: {html.escape(data['boundary_source'])}",
-        "Boundaries are simplified: use them for context, not for measurement or precise overlay.",
+        "Boundaries are simplified: use them for context, not for measurement or precise overlay. The old-downtown and "
+        "Xitun–Beitun files are subsets of the former-city files, with identical geometry and attributes. Futai Village "
+        "(富台里, East District) has no boundary in the source; the map shows it as a circle of the same area at its "
+        "label point.",
         f"Land-use areas: {html.escape(zoning_src)}",
         "Major projects: Taichung City Government project reports and news coverage; each row's source is in the CSV.",
         "Detailed plan overlay: colour patches auto-traced from Figure 7-1 (unofficial English reference) and fitted to "
@@ -241,7 +321,8 @@ def landing_values(data):
     return {
         "<!--__THUMB__-->": thumbnail_svg(data),
         "<!--__N_VILLAGES__-->": str(len(villages)),
-        "<!--__EXTENT__-->": f'{html.escape(names)} · {len(villages)} villages · <span class="num">{area:.2f}</span> km²',
+        "<!--__EXTENT__-->": (f'Former Taichung City, {len(districts)} districts ({n_old} in the old downtown) · '
+                              f'{len(villages)} villages · <span class="num">{area:.2f}</span> km²'),
         "<!--__BOUNDARY_DATE__-->": boundary_date,
         "<!--__ZONING_DATE__-->": f"2nd comprehensive review, public briefing{', ' + zd.group(0) if zd else ''}",
         "<!--__PROJECT_DATE__-->": f"Sources up to {project_dates[-1]}" if project_dates else "",
@@ -263,7 +344,7 @@ def main():
     map_page = fill(map_template, {
         "/*__DATA__*/null": payload,
         "/*__BASEMAP__*/true": "true",
-        "<!--__EYEBROW__-->": '<a href="../index.html">#HackYourDistrict 2026</a> · Taichung · Shuinan context layers',
+        "<!--__EYEBROW__-->": '<a href="../index.html">#HackYourDistrict 2026</a> · Taichung · Former city and Shuinan layers',
     })
     write(MAP_OUT, wrap_page(map_page, "en"))  # English leads; Chinese spans carry lang="zh-Hant-TW"
 
@@ -274,7 +355,7 @@ def main():
         fragment = fill(map_template, {
             "/*__DATA__*/null": payload,
             "/*__BASEMAP__*/true": "false",
-            "<!--__EYEBROW__-->": "#HackYourDistrict 2026 · Taichung · Shuinan context layers",
+            "<!--__EYEBROW__-->": "#HackYourDistrict 2026 · Taichung · Former city and Shuinan layers",
         })
         args.fragment.write_text(fragment, encoding="utf-8")
         print(f"wrote {args.fragment}")

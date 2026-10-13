@@ -1,4 +1,4 @@
-<title>Xitun &amp; Beitun Base Map</title>
+<title>Taichung Base Map</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@500;600&display=swap">
@@ -6,7 +6,9 @@
 /* Layout: a survey-sheet map inside a hairline neatline with coordinate ticks in the margin (left),
    a reference column of legend, lookup and plan figures (right); stacks to one column under 960px.
    Palette and type follow the HYD Healthy City Workshop deck: warm greys on #f4f4f2 with ink #1c1c1c,
-   2px ink rules between blocks, Instrument Serif / Instrument Sans / JetBrains Mono, Noto TC for Chinese. */
+   2px ink rules between blocks, Instrument Serif / Instrument Sans / JetBrains Mono, Noto TC for Chinese.
+   Themes: Paper (the deck, default in light mode), White and Dark (default in dark mode); the header switch
+   sets data-theme on <html> = "light" | "white" | "dark". */
 :root {
   --bg: #f4f4f2;
   --surface: #f4f4f2;
@@ -49,7 +51,7 @@
   --fs-xl: 32px;
 }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
+  :root:not([data-theme="light"]):not([data-theme="white"]) {
     --bg: #1c1c1c;
     --surface: #1c1c1c;
     --field: #262624;
@@ -78,6 +80,26 @@
     --shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
     color-scheme: dark;
   }
+}
+:root[data-theme="white"] {
+  --bg: #ffffff;
+  --surface: #ffffff;
+  --field: #f6f6f4;
+  --ground: #ffffff;
+  --rule: #dcdcd8;
+  --line-vil: #9b9b97;
+  --d0-fill: #d5d5d1;
+  --d0-hot: #c3c3bf;
+  --d1-fill: #ececea;
+  --d1-hot: #dededa;
+  --d0-wash: 0.13;
+  --d0-wash-hot: 0.26;
+  --d1-wash: 0.04;
+  --d1-wash-hot: 0.16;
+  --tile-filter: grayscale(1) contrast(0.9) brightness(1.08);
+  --neutral-fill: #d5d5d1;
+  --shadow: 0 8px 24px rgba(28, 28, 28, 0.14);
+  color-scheme: light;
 }
 :root[data-theme="dark"] {
   --bg: #1c1c1c;
@@ -172,6 +194,24 @@ h1 .zh { margin-left: 0.5em; font-family: "Noto Serif TC", "Songti TC", serif; f
   color: var(--ink-2);
   font-variant-numeric: tabular-nums;
 }
+.top-r { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+@media (max-width: 640px) { .top-r { align-items: flex-start; } }
+.theme-switch { display: inline-flex; border: 1px solid var(--rule); border-radius: 2px; }
+.theme-switch button {
+  padding: 3px 9px;
+  background: transparent;
+  border: 0;
+  border-left: 1px solid var(--rule);
+  font: 500 10.5px/1.6 var(--font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.theme-switch button:first-child { border-left: 0; }
+.theme-switch button:hover { background: var(--field); }
+.theme-switch button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.theme-switch .zh { margin-left: 0.35em; font-size: 11px; letter-spacing: 0.02em; text-transform: none; color: inherit; opacity: 0.75; }
 
 /* ---------- main grid ---------- */
 .main {
@@ -221,6 +261,8 @@ h1 .zh { margin-left: 0.5em; font-family: "Noto Serif TC", "Songti TC", serif; f
   stroke-linejoin: round;
   cursor: pointer;
 }
+.vil { fill-rule: evenodd; }
+.vil.approx { stroke: var(--ink-2); stroke-dasharray: 3 2; }
 .vil.d0 { fill: var(--d0-fill); }
 .vil.d1 { fill: var(--d1-fill); }
 .vil.d0.is-hot, .vil.d0.is-sel { fill: var(--d0-hot); }
@@ -260,6 +302,16 @@ h1 .zh { margin-left: 0.5em; font-family: "Noto Serif TC", "Songti TC", serif; f
   stroke-linejoin: round;
   pointer-events: none;
 }
+.old-outline {
+  fill: none;
+  stroke: var(--ink);
+  stroke-opacity: 0.2;
+  stroke-width: 8;
+  vector-effect: non-scaling-stroke;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+#map.no-old .old-outline { display: none; }
 .hover-outline, .sel-outline {
   fill: none;
   vector-effect: non-scaling-stroke;
@@ -394,6 +446,9 @@ h2 .zh.block { margin-top: 3px; }
 
 /* legend */
 .legend { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.legend-group { margin: 6px 0 0; font: 500 10.5px var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.legend-group:first-child { margin-top: 0; }
+.legend-group .zh { text-transform: none; letter-spacing: 0.02em; }
 .legend-dist {
   display: grid;
   grid-template-columns: 22px minmax(0, 1fr) auto;
@@ -430,6 +485,7 @@ h2 .zh.block { margin-top: 3px; }
 .legend-lines li { display: flex; align-items: center; gap: 8px; }
 .line-key { width: 26px; height: 0; border-top: 2px solid var(--line-admin); }
 .line-key.thin { border-top: 1px solid var(--line-vil); }
+.line-key.band { height: 8px; border-top: 0; background: color-mix(in srgb, var(--ink) 20%, transparent); }
 .toggles {
   display: flex;
   flex-wrap: wrap;
@@ -679,20 +735,33 @@ h3.mini .zh { text-transform: none; letter-spacing: 0.02em; }
   * { transition: none !important; animation: none !important; }
 }
 </style>
+<script>
+  try {
+    const t = localStorage.getItem("hyd2026-theme");
+    if (["light", "white", "dark"].includes(t)) document.documentElement.dataset.theme = t;
+  } catch (err) { /* storage unavailable: follow the system setting */ }
+</script>
 
 <div class="app" lang="en">
   <header class="top">
     <div>
       <p class="eyebrow"><!--__EYEBROW__--></p>
-      <h1>Xitun &amp; Beitun <i>Base Map</i><span class="zh" lang="zh-Hant-TW">西屯・北屯基本圖</span></h1>
+      <h1>Former Taichung City <i>Base Map</i><span class="zh" lang="zh-Hant-TW">原臺中市基本圖</span></h1>
     </div>
-    <p class="facts" id="facts"></p>
+    <div class="top-r">
+      <div class="theme-switch" role="group" aria-label="Colour theme">
+        <button type="button" data-theme-set="light" aria-pressed="false">Paper<span class="zh" lang="zh-Hant-TW">米白</span></button>
+        <button type="button" data-theme-set="white" aria-pressed="false">White<span class="zh" lang="zh-Hant-TW">白色</span></button>
+        <button type="button" data-theme-set="dark" aria-pressed="false">Dark<span class="zh" lang="zh-Hant-TW">深色</span></button>
+      </div>
+      <p class="facts" id="facts"></p>
+    </div>
   </header>
 
   <main class="main">
     <div class="mapframe" id="mapframe">
       <div class="tiles" id="tiles" aria-hidden="true" hidden></div>
-      <svg id="map" tabindex="0" role="img" aria-label="Map of district and village boundaries in Xitun and Beitun, Taichung. Drag to pan, scroll or pinch to zoom. Arrow keys pan, plus and minus zoom, 0 shows the full extent.">
+      <svg id="map" tabindex="0" role="img" aria-label="Map of district and village boundaries in the former Taichung City, with the old downtown marked. Drag to pan, scroll or pinch to zoom. Arrow keys pan, plus and minus zoom, 0 shows the full extent.">
         <defs><clipPath id="clip"><rect id="cliprect"></rect></clipPath><g id="road-label-paths"></g></defs>
         <rect class="ground" id="groundrect"></rect>
         <g clip-path="url(#clip)">
@@ -700,6 +769,7 @@ h3.mini .zh { text-transform: none; letter-spacing: 0.02em; }
             <g id="g-v"></g>
             <g id="g-plan"></g>
             <g id="g-roads"></g>
+            <g id="g-old"></g>
             <g id="g-d"></g>
             <g id="g-roadlabels"></g>
             <path class="proj-foot" id="proj-foot"></path>
@@ -733,6 +803,7 @@ h3.mini .zh { text-transform: none; letter-spacing: 0.02em; }
         <ul class="legend-lines">
           <li><span class="line-key"></span>District boundary<span class="zh" lang="zh-Hant-TW">區界</span></li>
           <li><span class="line-key thin"></span>Village boundary<span class="zh" lang="zh-Hant-TW">里界</span></li>
+          <li><span class="line-key band"></span>Old downtown<span class="zh" lang="zh-Hant-TW">舊市區範圍</span></li>
         </ul>
         <ul class="legend-lines" id="road-legend" hidden>
           <li><span class="line-key road-motorway"></span>Freeway<span class="zh" lang="zh-Hant-TW">國道、快速道路</span></li>
@@ -745,6 +816,7 @@ h3.mini .zh { text-transform: none; letter-spacing: 0.02em; }
         <div class="toggles" role="group" aria-label="Layers">
           <label id="lyr-osm-wrap" hidden><input type="checkbox" id="lyr-osm" checked>OSM basemap<span class="zh" lang="zh-Hant-TW">底圖</span></label>
           <label><input type="checkbox" id="lyr-fill" checked>District tint<span class="zh" lang="zh-Hant-TW">區底色</span></label>
+          <label><input type="checkbox" id="lyr-old" checked>Old downtown outline<span class="zh" lang="zh-Hant-TW">舊市區範圍</span></label>
           <label><input type="checkbox" id="lyr-vline" checked>Village lines<span class="zh" lang="zh-Hant-TW">里界</span></label>
           <label><input type="checkbox" id="lyr-vlabel" checked>Village names<span class="zh" lang="zh-Hant-TW">里名</span></label>
           <label id="lyr-roads-wrap" hidden><input type="checkbox" id="lyr-roads" checked>Road network<span class="zh" lang="zh-Hant-TW">路網</span></label>
@@ -753,7 +825,7 @@ h3.mini .zh { text-transform: none; letter-spacing: 0.02em; }
           <label><input type="checkbox" id="lyr-refs" checked>Reference points<span class="zh" lang="zh-Hant-TW">參考點</span></label>
         </div>
         <p class="note" id="osm-msg" hidden></p>
-        <p class="note">Click a district in the legend to zoom to it. Village names appear as you zoom in.</p>
+        <p class="note">The former Taichung City: the five old-downtown districts plus Xitun, Nantun and Beitun. Click a district in the legend to zoom to it. Village names appear as you zoom in.</p>
       </section>
 
       <section aria-labelledby="h-find">
@@ -889,7 +961,8 @@ h3.mini .zh { text-transform: none; letter-spacing: 0.02em; }
   const districts = DATA.districts.features.map((f, i) => {
     const p = f.properties;
     const [lx, ly] = proj(p.label_lon, p.label_lat);
-    return { p, i, en: clean(p.district_en), zh: clean(p.district_zh), short: clean(p.district_en).replace(/\s*District$/i, ""),
+    // g: tint group, 0 = old downtown (five central districts), 1 = the outer districts of the former city
+    return { p, i, g: p.old_downtown ? 0 : 1, en: clean(p.district_en), zh: clean(p.district_zh), short: clean(p.district_en).replace(/\s*District$/i, ""),
       d: geomPath(f.geometry), box: geomBox(f.geometry), lx, ly };
   });
   const distByCode = new Map(districts.map((d) => [d.p.district_code, d]));
@@ -899,9 +972,19 @@ h3.mini .zh { text-transform: none; letter-spacing: 0.02em; }
     const [lx, ly] = proj(p.label_lon, p.label_lat);
     const en = clean(p.village_en), zhName = clean(p.village_zh);
     const short = en.replace(/\s*Vil\.?$/i, "");
+    let d, box, approx = false;
+    if (f.geometry) {
+      d = geomPath(f.geometry); box = geomBox(f.geometry);
+    } else {
+      // no boundary in the source file: a circle of the same area at the label point
+      approx = true;
+      const r = Math.sqrt((p.area_km2 * 1e6) / Math.PI) / GROUND, rs = r.toFixed(1);
+      d = `M${(lx - r).toFixed(1)} ${ly.toFixed(1)}a${rs} ${rs} 0 1 0 ${(2 * r).toFixed(1)} 0a${rs} ${rs} 0 1 0 ${(-2 * r).toFixed(1)} 0Z`;
+      box = [lx - r, ly - r, lx + r, ly + r];
+    }
     return {
-      p, dist, en, short, zh: zhName,
-      d: geomPath(f.geometry), box: geomBox(f.geometry), lx, ly,
+      p, dist, en, short, zh: zhName, approx,
+      d, box, lx, ly,
       side: Math.sqrt(p.area_km2 * 1e6) / GROUND,
       // rough label width in px: English line vs Chinese line, whichever is wider
       need: Math.max(short.length * 6.4, [...zhName].length * 10) + 12,
@@ -940,16 +1023,20 @@ h3.mini .zh { text-transform: none; letter-spacing: 0.02em; }
   };
 
   for (const v of villages) {
-    v.el = svgEl("path", { d: v.d, class: "vil d" + v.dist.i }, gV);
+    v.el = svgEl("path", { d: v.d, class: "vil d" + v.dist.g + (v.approx ? " approx" : "") }, gV);
     v.el.__v = v;
   }
   for (const d of districts) svgEl("path", { d: d.d, class: "dist" }, gD);
+  if (DATA.old_downtown_outline) {
+    svgEl("path", { class: "old-outline", d: geomPath({ type: "Polygon", coordinates: DATA.old_downtown_outline }) }, $("#g-old"));
+  }
   for (const d of districts) {
     d.full = d.en;
     d.compact = d.short;
     d.labelEl = makeLabel("dlabel", d.full, d.zh);
   }
   const DIST_CHAR = 8.5; // approx px per character of the italic serif district label
+  const distByArea = [...districts].sort((a, b) => b.p.area_km2 - a.p.area_km2);
   for (const v of villages) v.labelEl = makeLabel("vlabel", v.short, v.zh);
 
   // ---------- view state ----------
@@ -958,7 +1045,7 @@ h3.mini .zh { text-transform: none; letter-spacing: 0.02em; }
   let interacted = false;
   let selected = null, hot = null;
   const BASEMAP = /*__BASEMAP__*/true; // false where external tiles are blocked (e.g. the Claude artifact build)
-  const layers = { osm: BASEMAP, fill: true, vline: true, vlabel: true };
+  const layers = { osm: BASEMAP, fill: true, old: true, vline: true, vlabel: true };
 
   const inner = () => ({ x0: M.l, y0: M.t, x1: W - M.r, y1: H - M.b });
   function fitView(box, pad, cap, clamp = true) {
@@ -1003,17 +1090,29 @@ h3.mini .zh { text-transform: none; letter-spacing: 0.02em; }
   function draw() {
     const { k, tx, ty } = view;
     gWorld.setAttribute("transform", `matrix(${k} 0 0 ${k} ${tx} ${ty})`);
-    const showDistLabels = k < fitK * 2.4;
     const blocked = []; // screen boxes taken by district labels
-    for (const d of districts) {
-      d.labelEl.style.display = showDistLabels ? "" : "none";
-      if (!showDistLabels) continue;
-      // fall back to the short name ("XITUN") when the district is narrow on screen
-      const text = (d.box[2] - d.box[0]) * k > d.full.length * DIST_CHAR * 1.25 ? d.full : d.compact;
-      if (d.labelEl.firstChild.textContent !== text) d.labelEl.firstChild.textContent = text;
-      const sx = k * d.lx + tx, sy = k * d.ly + ty, half = (text.length * DIST_CHAR) / 2 + 6;
-      placeLabel(d.labelEl, sx, sy, 9, 10);
-      blocked.push([sx - half, sy - 20, sx + half, sy + 20]);
+    const hits = (b) => blocked.some((o) => b[0] < o[2] && b[2] > o[0] && b[1] < o[3] && b[3] > o[1]);
+    const innerW = W - M.l - M.r;
+    for (const d of distByArea) {
+      const wPx = (d.box[2] - d.box[0]) * k;
+      // overview zooms, plus small districts until they fill half the frame (the old downtown)
+      let show = k < fitK * 2.4 || wPx < innerW * 0.5;
+      if (show) {
+        const sx = k * d.lx + tx, sy = k * d.ly + ty;
+        // fall back to the short name ("XITUN") when the district is narrow on screen
+        const texts = wPx > d.full.length * DIST_CHAR * 1.25 ? [d.full, d.compact] : [d.compact];
+        show = false;
+        for (const text of texts) {
+          const half = (text.length * DIST_CHAR) / 2 + 6, b = [sx - half, sy - 20, sx + half, sy + 20];
+          if (hits(b)) continue;
+          if (d.labelEl.firstChild.textContent !== text) d.labelEl.firstChild.textContent = text;
+          placeLabel(d.labelEl, sx, sy, 9, 10);
+          blocked.push(b);
+          show = true;
+          break;
+        }
+      }
+      d.labelEl.style.display = show ? "" : "none";
     }
     for (const v of villages) {
       const isSel = v === selected;
@@ -1021,7 +1120,7 @@ h3.mini .zh { text-transform: none; letter-spacing: 0.02em; }
       let vis = isSel || (layers.vlabel && v.side * k > v.need);
       if (vis && !isSel) {
         const x0 = sx - v.need / 2, x1 = sx + v.need / 2, y0 = sy - 14, y1 = sy + 14;
-        vis = !blocked.some((b) => x0 < b[2] && x1 > b[0] && y0 < b[3] && y1 > b[1]);
+        vis = !hits([x0, y0, x1, y1]);
       }
       v.labelEl.style.display = vis ? "" : "none";
       v.labelEl.classList.toggle("is-sel", isSel);
@@ -1357,7 +1456,8 @@ h3.mini .zh { text-transform: none; letter-spacing: 0.02em; }
   }
   function showVillageTip(v, cx, cy) {
     tip.innerHTML = `<b>${esc(v.en)}</b>${zh(v.zh)}<br>` +
-      `${esc(v.dist.en)} · <span class="num">${fmt(v.p.area_km2)} km²</span>`;
+      `${esc(v.dist.en)}${v.dist.g === 0 ? " (old downtown)" : ""} · <span class="num">${fmt(v.p.area_km2)} km²</span>` +
+      (v.approx ? `<br>Boundary missing in the source: approximate` : "");
     placeTip(cx, cy);
   }
   const hideTip = () => { tip.hidden = true; };
@@ -1374,17 +1474,19 @@ h3.mini .zh { text-transform: none; letter-spacing: 0.02em; }
       const d = v.dist;
       card.innerHTML = `
         <div class="sel-head">
-          <span class="swatch d${d.i}" aria-hidden="true"></span>
+          <span class="swatch d${d.g}" aria-hidden="true"></span>
           <div><h3>${esc(v.en)}</h3>${zh(v.zh, "zh block")}</div>
           <button type="button" class="clear" id="sel-clear">Clear</button>
         </div>
         <dl class="kv">
           <dt>District</dt><dd>${esc(d.en)}${zh(d.zh)}</dd>
+          <dt>Area group</dt><dd>${d.g === 0 ? `Old downtown${zh("舊市區")}` : `Outer district${zh("原臺中市外圍區")}`}</dd>
           <dt>Area</dt><dd><span class="num">${fmt(v.p.area_km2)} km²</span> (<span class="num">${fmt(v.p.area_km2 * 100, 1)}</span> ha)</dd>
           <dt>Share of district</dt><dd><span class="num">${fmt((v.p.area_km2 / d.p.area_km2) * 100, 1)}%</span></dd>
           <dt>Area rank</dt><dd>${ordinal(v.rank)} largest of ${v.of} in ${esc(d.en)}</dd>
           <dt>Village code</dt><dd class="mono">${esc(v.p.village_code)}</dd>
-        </dl>`;
+        </dl>
+        ${v.approx ? `<p class="note">The source file has no boundary for this village. The dashed circle has the same area and sits at its label point.</p>` : ""}`;
       $("#sel-clear").addEventListener("click", () => select(null));
       if (zoom) {
         interacted = true;
@@ -1401,11 +1503,23 @@ h3.mini .zh { text-transform: none; letter-spacing: 0.02em; }
 
   // ---------- legend ----------
   const legend = $("#legend");
-  for (const d of districts) {
+  const GROUPS = [
+    ["Old downtown", "舊市區"],
+    ["Outer districts", "原臺中市外圍區"],
+  ];
+  for (const d of [...districts].sort((a, b) => a.g - b.g || a.i - b.i)) {
+    if (!legend.querySelector(`[data-group="${d.g}"]`)) {
+      const n = districts.filter((x) => x.g === d.g).length;
+      const head = document.createElement("li");
+      head.className = "legend-group";
+      head.dataset.group = d.g;
+      head.innerHTML = `${GROUPS[d.g][0]} · ${n}${zh(GROUPS[d.g][1])}`;
+      legend.appendChild(head);
+    }
     const li = document.createElement("li");
     li.innerHTML = `
       <button type="button" class="legend-dist" aria-label="Zoom to ${esc(d.en)}">
-        <span class="swatch d${d.i}" aria-hidden="true"></span>
+        <span class="swatch d${d.g}" aria-hidden="true"></span>
         <span><span class="nm">${esc(d.en)}</span>${zh(d.zh)}</span>
         <span class="meta num">${fmt(d.p.area_km2)} km² · ${d.p.village_count} vil.</span>
       </button>`;
@@ -1429,6 +1543,7 @@ h3.mini .zh { text-transform: none; letter-spacing: 0.02em; }
     setBasemap(e.target.checked);
   });
   bindLayer("#lyr-fill", "fill", "no-fill");
+  bindLayer("#lyr-old", "old", "no-old");
   bindLayer("#lyr-vline", "vline", "no-vline");
   bindLayer("#lyr-vlabel", "vlabel", null);
 
@@ -1840,10 +1955,13 @@ h3.mini .zh { text-transform: none; letter-spacing: 0.02em; }
     : "This table has no coordinates, so the projects are not plotted on the map yet.";
 
   // ---------- sources ----------
-  const vertexCount = DATA.villages.features.reduce((s, f) => s + rings(f.geometry).flat().reduce((t, r) => t + r.length, 0), 0);
+  const vertexCount = DATA.villages.features.reduce((s, f) => s + (f.geometry ? rings(f.geometry).flat().reduce((t, r) => t + r.length, 0) : 0), 0);
+  const approxVil = villages.filter((v) => v.approx);
   $("#sources").innerHTML = [
     `Boundaries: ${esc(DATA.boundary_source)}`,
     `Boundaries are simplified (about ${vertexCount} vertices for ${villages.length} villages). Use them for context, not for measurement or precise overlay. Areas come from the attribute table.`,
+    `Old downtown: Central, East, South, West and North Districts (the old_downtown flag in the source); its outline merges their boundaries. The old-downtown and Xitun–Beitun files are subsets of the former-city files.`,
+    ...approxVil.map((v) => `${esc(v.en)} (${esc(v.zh)}, ${esc(v.dist.en)}) has no boundary in the source file; it is drawn as a dashed circle of its area (${fmt(v.p.area_km2, 3)} km²) at its label point.`),
     `Land use: ${esc(src)}`,
     `Detailed plan overlay: ${esc(G.source)}. Placed by a similarity transform fitted to OpenStreetMap road centrelines (scale ${G.scale_m_per_mm} m per drawing mm, matching the zone areas; rotation ${G.rotation_deg}°); ${esc(G.status)}.`,
     `Reference points: coordinates as published by the sources listed with each point (Wikipedia infoboxes, OurAirports).`,
@@ -1853,6 +1971,23 @@ h3.mini .zh { text-transform: none; letter-spacing: 0.02em; }
     `Coordinates: WGS84 (CRS84). The map uses Web Mercator to match the OpenStreetMap tiles; the scale bar uses the east-west scale at the center of the study area.`,
     ...(BASEMAP ? [`Basemap: © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors. Tiles from the OpenStreetMap Foundation, used under its <a href="https://operations.osmfoundation.org/policies/tiles/" target="_blank" rel="noopener">tile usage policy</a>.`] : []),
   ].map((t) => `<li>${t}</li>`).join("");
+
+  // ---------- colour theme: Paper (deck) / White / Dark ----------
+  // The choice is stored per browser and shared with the landing page; without one the system setting decides.
+  const THEME_KEY = "hyd2026-theme";
+  const sysDark = window.matchMedia("(prefers-color-scheme: dark)");
+  const themeBtns = [...document.querySelectorAll("[data-theme-set]")];
+  const syncTheme = () => {
+    const t = document.documentElement.dataset.theme || (sysDark.matches ? "dark" : "light");
+    for (const b of themeBtns) b.setAttribute("aria-pressed", String(b.dataset.themeSet === t));
+  };
+  for (const b of themeBtns) b.addEventListener("click", () => {
+    document.documentElement.dataset.theme = b.dataset.themeSet;
+    try { localStorage.setItem(THEME_KEY, b.dataset.themeSet); } catch (err) { /* kept for this visit only */ }
+    syncTheme();
+  });
+  sysDark.addEventListener("change", syncTheme);
+  syncTheme();
 
   // ---------- boot ----------
   setBasemap(BASEMAP, false);

@@ -4,7 +4,8 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@500;600&display=swap">
 <style>
 /* Layout: one reading column; each output sits under a 2px ink rule with its map outline beside the description.
-   Same palette and type as the map page (after the HYD Healthy City Workshop deck) so the two read as one set. */
+   Same palette and type as the map page (after the HYD Healthy City Workshop deck) so the two read as one set.
+   Themes as on the map: Paper (default in light mode), White, Dark; data-theme = "light" | "white" | "dark". */
 :root {
   --bg: #f4f4f2;
   --field: #fbfbf9;
@@ -26,7 +27,7 @@
   --font-zh: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
 }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
+  :root:not([data-theme="light"]):not([data-theme="white"]) {
     --bg: #1c1c1c;
     --field: #262624;
     --ground: #232321;
@@ -42,6 +43,16 @@
     --d1-fill: #2c2c2a;
     color-scheme: dark;
   }
+}
+:root[data-theme="white"] {
+  --bg: #ffffff;
+  --field: #f6f6f4;
+  --ground: #f1f1ee;
+  --rule: #dcdcd8;
+  --line-vil: #9b9b97;
+  --d0-fill: #d5d5d1;
+  --d1-fill: #eeeeeb;
+  color-scheme: light;
 }
 :root[data-theme="dark"] {
   --bg: #1c1c1c;
@@ -81,6 +92,23 @@ a { color: var(--ink); text-underline-offset: 3px; }
 }
 .page > * { min-width: 0; }
 
+.bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; }
+.theme-switch { display: inline-flex; border: 1px solid var(--rule); border-radius: 2px; }
+.theme-switch button {
+  padding: 3px 9px;
+  background: transparent;
+  border: 0;
+  border-left: 1px solid var(--rule);
+  font: 500 10.5px/1.6 var(--font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.theme-switch button:first-child { border-left: 0; }
+.theme-switch button:hover { background: var(--field); }
+.theme-switch button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.theme-switch .zh { margin-left: 0.35em; font-size: 11px; color: inherit; opacity: 0.75; }
 .eyebrow {
   margin: 0;
   font: 500 11.5px/1.4 var(--font-mono);
@@ -145,6 +173,7 @@ h2 {
 .thumb .v.d0 { fill: var(--d0-fill); }
 .thumb .v.d1 { fill: var(--d1-fill); }
 .thumb .dist { fill: none; stroke: var(--line-admin); stroke-width: 1.4; stroke-linejoin: round; }
+.thumb .old { fill: none; stroke: var(--ink); stroke-opacity: 0.2; stroke-width: 6; stroke-linejoin: round; }
 .thumb-link:hover { border-color: var(--ink); }
 
 .kicker { margin: 0; font: 500 11px/1.4 var(--font-mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
@@ -187,22 +216,35 @@ td .fmt { margin-left: 6px; font: 11px var(--font-mono); color: var(--muted); }
 footer { font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--rule); padding-top: 14px; }
 footer a { color: inherit; }
 </style>
+<script>
+  try {
+    const t = localStorage.getItem("hyd2026-theme");
+    if (["light", "white", "dark"].includes(t)) document.documentElement.dataset.theme = t;
+  } catch (err) { /* storage unavailable: follow the system setting */ }
+</script>
 
 <div class="page" lang="en">
   <header>
-    <p class="eyebrow">#HackYourDistrict 2026 · Taichung · Shuinan context layers</p>
+    <div class="bar">
+      <p class="eyebrow">#HackYourDistrict 2026 · Taichung · Former city and Shuinan layers</p>
+      <div class="theme-switch" role="group" aria-label="Colour theme">
+        <button type="button" data-theme-set="light" aria-pressed="false">Paper<span class="zh" lang="zh-Hant-TW">米白</span></button>
+        <button type="button" data-theme-set="white" aria-pressed="false">White<span class="zh" lang="zh-Hant-TW">白色</span></button>
+        <button type="button" data-theme-set="dark" aria-pressed="false">Dark<span class="zh" lang="zh-Hant-TW">深色</span></button>
+      </div>
+    </div>
     <h1>HYD2026 Taichung <i>Outputs</i><span class="zh" lang="zh-Hant-TW">臺中成果</span></h1>
-    <p class="lede">District and village boundaries for Xitun and Beitun, the land-use areas and major projects of the Shuinan Airport site detailed plan, and a traced overlay of the plan itself, gathered into a map that runs in the browser.<span class="zh block" lang="zh-Hant-TW">整理西屯區、北屯區行政界線、水湳機場原址細部計畫土地使用面積與重大建設進度，以及細部計畫疊圖，做成可在瀏覽器直接操作的地圖。</span></p>
+    <p class="lede">District and village boundaries for the eight districts of the former Taichung City, with the five-district old downtown marked; the land-use areas and major projects of the Shuinan Airport site detailed plan; and a traced overlay of the plan itself, gathered into a map that runs in the browser.<span class="zh block" lang="zh-Hant-TW">整理原臺中市8區的行政界線並標示舊市區5區，加上水湳機場原址細部計畫土地使用面積、重大建設進度與細部計畫疊圖，做成可在瀏覽器直接操作的地圖。</span></p>
   </header>
 
   <section aria-labelledby="h-out">
     <h2 id="h-out">Outputs<span class="zh" lang="zh-Hant-TW">成果</span></h2>
     <article class="work">
-      <a class="thumb-link" href="map/index.html" aria-label="Open the Xitun and Beitun base map"><!--__THUMB__--></a>
+      <a class="thumb-link" href="map/index.html" aria-label="Open the former Taichung City base map"><!--__THUMB__--></a>
       <div>
         <p class="kicker">Interactive map<span class="zh" lang="zh-Hant-TW">互動地圖</span></p>
-        <h3><a href="map/index.html">Xitun &amp; Beitun <i>Base Map</i></a><span class="zh block" lang="zh-Hant-TW">西屯・北屯基本圖</span></h3>
-        <p class="desc">District and <!--__N_VILLAGES__--> village boundaries on an OpenStreetMap basemap, with village lookup, the traced detailed plan, reference points with sourced coordinates, and side panels on plan land use and major projects.</p>
+        <h3><a href="map/index.html">Former Taichung City <i>Base Map</i></a><span class="zh block" lang="zh-Hant-TW">原臺中市基本圖</span></h3>
+        <p class="desc">District and <!--__N_VILLAGES__--> village boundaries with the old downtown outlined, on an OpenStreetMap basemap with the road network, major projects at Shuinan, village lookup, the traced detailed plan, and side panels on plan land use and project status.</p>
         <dl class="facts">
           <dt>Extent</dt><dd><!--__EXTENT__--></dd>
           <dt>Boundaries</dt><dd><!--__BOUNDARY_DATE__--></dd>
@@ -228,6 +270,24 @@ footer a { color: inherit; }
     <h2 id="h-src">Sources and licences<span class="zh" lang="zh-Hant-TW">資料來源與授權</span></h2>
     <ul class="sources"><!--__SOURCES__--></ul>
   </section>
+
+  <script>
+    (() => {
+      const sysDark = window.matchMedia("(prefers-color-scheme: dark)");
+      const btns = [...document.querySelectorAll("[data-theme-set]")];
+      const sync = () => {
+        const t = document.documentElement.dataset.theme || (sysDark.matches ? "dark" : "light");
+        for (const b of btns) b.setAttribute("aria-pressed", String(b.dataset.themeSet === t));
+      };
+      for (const b of btns) b.addEventListener("click", () => {
+        document.documentElement.dataset.theme = b.dataset.themeSet;
+        try { localStorage.setItem("hyd2026-theme", b.dataset.themeSet); } catch (err) { /* this visit only */ }
+        sync();
+      });
+      sysDark.addEventListener("change", sync);
+      sync();
+    })();
+  </script>
 
   <footer>
     Source data, map templates and build scripts: <a href="https://github.com/yunching0513/HYD2026_Taichung">github.com/yunching0513/HYD2026_Taichung</a>
