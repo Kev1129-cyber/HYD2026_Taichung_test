@@ -240,7 +240,7 @@ def main():
     map_page = fill(map_template, {
         "/*__DATA__*/null": payload,
         "/*__BASEMAP__*/true": "true",
-        "<!--__EYEBROW__-->": '<a href="../index.html">HYD2026 Taichung</a> | Shuinan context layers',
+        "<!--__EYEBROW__-->": '<a href="../index.html">#HackYourDistrict 2026</a> · Taichung · Shuinan context layers',
     })
     write(MAP_OUT, wrap_page(map_page, "en"))  # English leads; Chinese spans carry lang="zh-Hant-TW"
 
@@ -251,7 +251,7 @@ def main():
         fragment = fill(map_template, {
             "/*__DATA__*/null": payload,
             "/*__BASEMAP__*/true": "false",
-            "<!--__EYEBROW__-->": "TAICHUNG | Shuinan context layers",
+            "<!--__EYEBROW__-->": "#HackYourDistrict 2026 · Taichung · Shuinan context layers",
         })
         args.fragment.write_text(fragment, encoding="utf-8")
         print(f"wrote {args.fragment}")

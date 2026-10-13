@@ -9,61 +9,61 @@
 <title>HYD2026臺中成果</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@500;600&display=swap">
 <style>
-/* Layout: one reading column; each output is a sheet with its map outline beside the description.
-   Same tokens as the map page so the two read as one set. */
+/* Layout: one reading column; each output sits under a 2px ink rule with its map outline beside the description.
+   Same palette and type as the map page (after the HYD Healthy City Workshop deck) so the two read as one set. */
 :root {
-  --bg: #eaefee;
-  --surface: #fbfcfc;
-  --ink: #15242b;
-  --ink-2: #4b5b62;
-  --muted: #637278;
-  --rule: #d3dcdc;
-  --line-vil: #93a3a8;
-  --line-admin: #1d3038;
-  --accent: #0b6a73;
-  --accent-ink: #ffffff;
-  --d1: #2a78d6;
-  --d2: #eb6834;
-  --tint: 20%;
+  --bg: #f4f4f2;
+  --field: #fbfbf9;
+  --ground: #e9e9e5;
+  --ink: #1c1c1c;
+  --ink-2: #3f3f3c;
+  --muted: #6b6b67;
+  --rule: #d2d2ce;
+  --line-vil: #8f8f8b;
+  --line-admin: #1c1c1c;
+  --accent: #1c1c1c;
+  --accent-ink: #f2f2ef;
+  --d0-fill: #c9c9c5;
+  --d1-fill: #e4e4e0;
 
-  --font-display: "Noto Serif TC", "Songti TC", "PMingLiU", serif;
-  --font-body: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --font-display: "Instrument Serif", "Noto Serif TC", "Songti TC", "PMingLiU", Georgia, serif;
+  --font-body: "Instrument Sans", "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #0d1416;
-    --surface: #141d20;
-    --ink: #e4ecec;
-    --ink-2: #a8b7ba;
-    --muted: #8a9a9e;
-    --rule: #263338;
-    --line-vil: #4c5f65;
-    --line-admin: #d4e0e1;
-    --accent: #4fb8c2;
-    --accent-ink: #062226;
-    --d1: #3987e5;
-    --d2: #d95926;
-    --tint: 22%;
+    --bg: #1c1c1c;
+    --field: #262624;
+    --ground: #232321;
+    --ink: #f2f2ef;
+    --ink-2: #d2d2ce;
+    --muted: #a3a3a0;
+    --rule: #3f3f3c;
+    --line-vil: #6b6b67;
+    --line-admin: #f2f2ef;
+    --accent: #f2f2ef;
+    --accent-ink: #1c1c1c;
+    --d0-fill: #4a4a47;
+    --d1-fill: #2c2c2a;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #0d1416;
-  --surface: #141d20;
-  --ink: #e4ecec;
-  --ink-2: #a8b7ba;
-  --muted: #8a9a9e;
-  --rule: #263338;
-  --line-vil: #4c5f65;
-  --line-admin: #d4e0e1;
-  --accent: #4fb8c2;
-  --accent-ink: #062226;
-  --d1: #3987e5;
-  --d2: #d95926;
-  --tint: 22%;
+  --bg: #1c1c1c;
+  --field: #262624;
+  --ground: #232321;
+  --ink: #f2f2ef;
+  --ink-2: #d2d2ce;
+  --muted: #a3a3a0;
+  --rule: #3f3f3c;
+  --line-vil: #6b6b67;
+  --line-admin: #f2f2ef;
+  --accent: #f2f2ef;
+  --accent-ink: #1c1c1c;
+  --d0-fill: #4a4a47;
+  --d1-fill: #2c2c2a;
   color-scheme: dark;
 }
 
@@ -75,7 +75,7 @@ body {
   font: 15px/1.7 var(--font-body);
   -webkit-font-smoothing: antialiased;
 }
-a { color: var(--accent); text-underline-offset: 3px; }
+a { color: var(--ink); text-underline-offset: 3px; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 .page {
@@ -84,91 +84,90 @@ a { color: var(--accent); text-underline-offset: 3px; }
   padding-inline: 16px;
   padding-block: 40px 56px;
   display: grid;
-  gap: 40px;
+  gap: 44px;
 }
 .page > * { min-width: 0; }
 
 .eyebrow {
   margin: 0;
-  font: 500 11px/1.4 var(--font-mono);
-  letter-spacing: 0.12em;
+  font: 500 11.5px/1.4 var(--font-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
   color: var(--muted);
 }
 h1 {
-  margin: 6px 0 0;
-  font: 700 clamp(28px, 5vw, 40px)/1.2 var(--font-display);
-  letter-spacing: 0.05em;
+  margin: 8px 0 0;
+  font: 400 clamp(36px, 6vw, 56px)/1.05 var(--font-display);
+  letter-spacing: -1px;
   text-wrap: balance;
 }
-.lede { margin: 14px 0 0; max-width: 40em; color: var(--ink-2); }
+.lede { margin: 16px 0 0; max-width: 40em; color: var(--ink-2); }
 
+/* section labels: mono caps under a 2px ink rule, as in the deck */
 h2 {
-  margin: 0 0 14px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--rule);
-  font: 700 14px/1.4 var(--font-body);
-  letter-spacing: 0.08em;
-  color: var(--ink-2);
+  margin: 0 0 16px;
+  padding-top: 10px;
+  border-top: 2px solid var(--ink);
+  font: 500 11.5px/1.4 var(--font-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
 }
 
 /* output sheet */
 .work {
   display: grid;
   grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
-  gap: 28px;
+  gap: 32px;
   align-items: center;
-  padding: 20px;
-  background: var(--surface);
-  border: 1px solid var(--rule);
-  border-radius: 2px;
 }
 @media (max-width: 760px) {
-  .work { grid-template-columns: 1fr; gap: 18px; padding: 16px; }
+  .work { grid-template-columns: 1fr; gap: 18px; }
 }
 .thumb-link {
   display: block;
   padding: 10px;
-  border: 1px solid var(--line-admin);
-  background: var(--bg);
+  border: 1px solid var(--rule);
+  background: var(--field);
 }
 .thumb { display: block; width: 100%; height: auto; }
 .thumb .v { stroke: var(--line-vil); stroke-width: 0.6; stroke-linejoin: round; }
-.thumb .v.d0 { fill: color-mix(in srgb, var(--d1) var(--tint), var(--surface)); }
-.thumb .v.d1 { fill: color-mix(in srgb, var(--d2) var(--tint), var(--surface)); }
+.thumb .v.d0 { fill: var(--d0-fill); }
+.thumb .v.d1 { fill: var(--d1-fill); }
 .thumb .dist { fill: none; stroke: var(--line-admin); stroke-width: 1.4; stroke-linejoin: round; }
-.thumb-link:hover .v { stroke: var(--ink-2); }
+.thumb-link:hover { border-color: var(--ink); }
 
-.kicker { margin: 0; font: 500 11px/1.4 var(--font-mono); letter-spacing: 0.12em; color: var(--muted); }
-.work h3 { margin: 4px 0 8px; font: 700 24px/1.3 var(--font-display); letter-spacing: 0.06em; }
+.kicker { margin: 0; font: 500 11px/1.4 var(--font-mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+.work h3 { margin: 6px 0 10px; font: 400 34px/1.1 var(--font-display); letter-spacing: -0.5px; }
 .work h3 a { color: var(--ink); text-decoration: none; }
-.work h3 a:hover { text-decoration: underline; }
+.work h3 a:hover { text-decoration: underline; text-decoration-thickness: 1px; }
 .work p.desc { margin: 0; color: var(--ink-2); }
 .facts {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: 2px 14px;
-  margin: 14px 0 18px;
+  gap: 0;
+  margin: 16px 0 20px;
   font-size: 13px;
 }
-.facts dt { color: var(--muted); }
-.facts dd { margin: 0; }
+.facts dt, .facts dd { margin: 0; padding: 5px 14px 5px 0; border-top: 1px solid var(--rule); }
+.facts dt { font: 500 10.5px/2 var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
 .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 .btn {
   display: inline-block;
-  padding: 9px 18px;
+  padding: 10px 20px;
   background: var(--accent);
   color: var(--accent-ink);
   border-radius: 2px;
-  font-weight: 500;
+  font-weight: 600;
   text-decoration: none;
 }
-.btn:hover { filter: brightness(1.08); }
+.btn:hover { opacity: 0.86; }
 
 /* downloads */
 .table-wrap { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
 th, td { padding: 9px 10px 9px 0; text-align: left; vertical-align: top; border-bottom: 1px solid var(--rule); }
-th { font-size: 12px; font-weight: 500; color: var(--muted); }
+th { font: 500 10.5px var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
 td.file { min-width: 11em; overflow-wrap: anywhere; }
 td.size { white-space: nowrap; text-align: right; padding-right: 0; }
 th.size { text-align: right; padding-right: 0; }
@@ -181,7 +180,7 @@ footer a { color: inherit; }
 
 <div class="page" lang="zh-Hant-TW">
   <header>
-    <p class="eyebrow">HYD2026｜臺中市・水湳周邊</p>
+    <p class="eyebrow">#HackYourDistrict 2026｜臺中市・水湳周邊</p>
     <h1>HYD2026臺中成果</h1>
     <p class="lede">整理臺中市西屯區、北屯區的行政界線，以及水湳機場原址細部計畫的土地使用面積與園區重大建設進度，做成可在瀏覽器直接操作的地圖。</p>
   </header>
