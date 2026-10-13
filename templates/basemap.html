@@ -271,7 +271,7 @@ h1 .zh { margin-left: 0.5em; font-family: "Noto Serif TC", "Songti TC", serif; f
 #map.no-fill .vil.is-hot, #map.no-fill .vil.is-sel { fill: color-mix(in srgb, var(--ink) 8%, var(--surface)); }
 #map.no-vline .vil { stroke: none; }
 
-/* OpenStreetMap raster tiles sit in an HTML layer under the svg */
+/* basemap: OpenFreeMap vector tiles (MapLibre) or, as a fallback, OSM raster tiles, in HTML layers under the svg */
 .tiles {
   position: absolute;
   z-index: 0;
@@ -286,6 +286,14 @@ h1 .zh { margin-left: 0.5em; font-family: "Noto Serif TC", "Songti TC", serif; f
   max-width: none;
   user-select: none;
 }
+.vbase {
+  position: absolute;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  filter: var(--tile-filter);
+}
+.vbase > div { width: 100%; height: 100%; }
 #map.has-tiles .ground { fill: none; }
 #map.has-tiles .vil.d0 { fill: var(--ink); fill-opacity: var(--d0-wash); }
 #map.has-tiles .vil.d1 { fill: var(--ink); fill-opacity: var(--d1-wash); }
@@ -760,6 +768,7 @@ h3.mini .zh { text-transform: none; letter-spacing: 0.02em; }
 
   <main class="main">
     <div class="mapframe" id="mapframe">
+      <div class="vbase" id="vbase" aria-hidden="true" hidden><div id="vmap"></div></div>
       <div class="tiles" id="tiles" aria-hidden="true" hidden></div>
       <svg id="map" tabindex="0" role="img" aria-label="Map of district and village boundaries in the former Taichung City, with the old downtown marked. Drag to pan, scroll or pinch to zoom. Arrow keys pan, plus and minus zoom, 0 shows the full extent.">
         <defs><clipPath id="clip"><rect id="cliprect"></rect></clipPath><g id="road-label-paths"></g></defs>
@@ -793,7 +802,7 @@ h3.mini .zh { text-transform: none; letter-spacing: 0.02em; }
         </button>
       </div>
       <div class="coord" id="coord" hidden></div>
-      <div class="attrib" id="attrib" hidden>© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors</div>
+      <div class="attrib" id="attrib" hidden></div>
     </div>
 
     <aside class="aside">
@@ -814,7 +823,7 @@ h3.mini .zh { text-transform: none; letter-spacing: 0.02em; }
           <li><span class="line-key road-rail"></span>Railway<span class="zh" lang="zh-Hant-TW">鐵路</span></li>
         </ul>
         <div class="toggles" role="group" aria-label="Layers">
-          <label id="lyr-osm-wrap" hidden><input type="checkbox" id="lyr-osm" checked>OSM basemap<span class="zh" lang="zh-Hant-TW">底圖</span></label>
+          <label id="lyr-osm-wrap" hidden><input type="checkbox" id="lyr-osm" checked>Basemap, English labels<span class="zh" lang="zh-Hant-TW">英文底圖</span></label>
           <label><input type="checkbox" id="lyr-fill" checked>District tint<span class="zh" lang="zh-Hant-TW">區底色</span></label>
           <label><input type="checkbox" id="lyr-old" checked>Old downtown outline<span class="zh" lang="zh-Hant-TW">舊市區範圍</span></label>
           <label><input type="checkbox" id="lyr-vline" checked>Village lines<span class="zh" lang="zh-Hant-TW">里界</span></label>
@@ -1070,7 +1079,10 @@ h3.mini .zh { text-transform: none; letter-spacing: 0.02em; }
       el.setAttribute("x", r.x0); el.setAttribute("y", r.y0);
       el.setAttribute("width", r.x1 - r.x0); el.setAttribute("height", r.y1 - r.y0);
     }
-    Object.assign(tilesDiv.style, { left: r.x0 + "px", top: r.y0 + "px", width: r.x1 - r.x0 + "px", height: r.y1 - r.y0 + "px" });
+    for (const el of [tilesDiv, vbase]) {
+      Object.assign(el.style, { left: r.x0 + "px", top: r.y0 + "px", width: r.x1 - r.x0 + "px", height: r.y1 - r.y0 + "px" });
+    }
+    if (vmap) vmap.resize();
     // zoom limits are relative to the full-extent fit, so compute that unclamped first
     const prevFit = fitK;
     fitK = fitView(totalBox, 18, null, false).k;
@@ -1132,7 +1144,10 @@ h3.mini .zh { text-transform: none; letter-spacing: 0.02em; }
     drawProjects();
     drawTicks();
     drawScale();
-    if (layers.osm) updateTiles();
+    if (layers.osm) {
+      if (vmap) syncVector();
+      else if (rasterMode) updateTiles();
+    }
   }
 
   // ---------- map furniture ----------
@@ -1201,8 +1216,72 @@ h3.mini .zh { text-transform: none; letter-spacing: 0.02em; }
     svgEl("text", { class: "north-n", x: 0, y: -17 }, g).textContent = "N";
   }
 
-  // ---------- OpenStreetMap basemap ----------
-  // Standard XYZ raster tiles. Tile usage policy: https://operations.osmfoundation.org/policies/tiles/
+  // ---------- basemap ----------
+  // Preferred: OpenFreeMap vector tiles (OpenMapTiles schema, OSM data) drawn by MapLibre GL JS, with every label
+  // switched to the English name (name:en) where OSM has one, otherwise the local name. Raster tiles carry
+  // their labels baked in, in the local language, so they are only the fallback when the vector map cannot start.
+  const VECTOR_STYLE = "https://tiles.openfreemap.org/styles/positron";
+  const MAPLIBRE = "https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl";
+  const EN_LABEL = ["coalesce", ["get", "name:en"], ["get", "name_en"], ["get", "name"]];
+  const ATTRIB = {
+    vector: '<a href="https://openfreemap.org" target="_blank" rel="noopener">OpenFreeMap</a> © <a href="https://www.openmaptiles.org/" target="_blank" rel="noopener">OpenMapTiles</a> · data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors',
+    osm: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors',
+  };
+  const vbase = $("#vbase");
+  let vmap = null, rasterMode = false, vectorStyled = false;
+
+  function loadVectorBasemap() {
+    const css = document.createElement("link");
+    css.rel = "stylesheet";
+    css.href = MAPLIBRE + ".css";
+    document.head.appendChild(css);
+    const js = document.createElement("script");
+    js.src = MAPLIBRE + ".js";
+    js.onload = startVector;
+    js.onerror = vectorFailed;
+    document.head.appendChild(js);
+    setTimeout(() => { if (!vectorStyled && !rasterMode) vectorFailed(); }, 20000);
+  }
+  function startVector() {
+    if (rasterMode) return;
+    try {
+      vmap = new maplibregl.Map({
+        container: "vmap", style: VECTOR_STYLE, interactive: false, attributionControl: false,
+        fadeDuration: 0, renderWorldCopies: false, center: [LON0, LAT0], zoom: 11,
+        // labels that fall back to Chinese are drawn with local fonts instead of downloaded CJK glyphs
+        localIdeographFontFamily: "'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif",
+      });
+    } catch (err) { vectorFailed(); return; }
+    vmap.on("style.load", () => {
+      for (const layer of vmap.getStyle().layers) {
+        if (layer.type !== "symbol") continue;
+        const tf = vmap.getLayoutProperty(layer.id, "text-field");
+        if (tf && JSON.stringify(tf).includes("name")) vmap.setLayoutProperty(layer.id, "text-field", EN_LABEL);
+      }
+      vectorStyled = true;
+    });
+    // a missing tile later on is harmless; failing before the style arrives means no vector map
+    vmap.on("error", () => { if (!vectorStyled) vectorFailed(); });
+    syncVector();
+  }
+  function syncVector() {
+    const r = inner();
+    const [lon, lat] = unproj(((r.x0 + r.x1) / 2 - view.tx) / view.k, ((r.y0 + r.y1) / 2 - view.ty) / view.k);
+    // MapLibre zoom z puts the world on 512 * 2^z px; here the world spans k * 2 * HALF px
+    vmap.jumpTo({ center: [lon, lat], zoom: Math.log2((view.k * 2 * HALF) / 512) });
+    vmap.redraw(); // render now, in step with the svg, rather than on the next frame
+  }
+  function vectorFailed() {
+    if (rasterMode) return;
+    if (vmap) { try { vmap.remove(); } catch (err) { /* already gone */ } vmap = null; }
+    vbase.hidden = true;
+    rasterMode = true;
+    osmMsg.textContent = "The English basemap could not load, so the standard OpenStreetMap tiles are shown, with labels in the local language.";
+    osmMsg.hidden = false;
+    setBasemap(layers.osm);
+  }
+
+  // Fallback: standard XYZ raster tiles. Tile usage policy: https://operations.osmfoundation.org/policies/tiles/
   // (visible attribution required; fine for light interactive use, no bulk downloading).
   const TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
   const tilesDiv = $("#tiles"), attrib = $("#attrib"), osmMsg = $("#osm-msg");
@@ -1264,18 +1343,25 @@ h3.mini .zh { text-transform: none; letter-spacing: 0.02em; }
     tileCache.clear();
     wanted = new Set();
   }
+  function setAttrib() {
+    const roads = DATA.roads && $("#lyr-roads").checked;
+    attrib.hidden = !layers.osm && !roads;
+    attrib.innerHTML = layers.osm && !rasterMode ? ATTRIB.vector : ATTRIB.osm;
+  }
   function setBasemap(on, redraw = true) {
     layers.osm = on;
     $("#lyr-osm").checked = on;
     svg.classList.toggle("has-tiles", on);
-    tilesDiv.hidden = !on;
-    attrib.hidden = !on && !(DATA.roads && $("#lyr-roads").checked);
+    vbase.hidden = !on || rasterMode;
+    tilesDiv.hidden = !on || !rasterMode;
+    setAttrib();
     if (!on) clearTiles();
+    if (on && vmap) vmap.resize(); // it may have been hidden
     if (redraw) draw();
   }
   function basemapFailed() {
     setBasemap(false);
-    osmMsg.textContent = "The OSM basemap could not load (offline, a blocked network, or the page was opened as a local file), so the map is shown without it.";
+    osmMsg.textContent = "The basemap could not load (offline, a blocked network, or the page was opened as a local file), so the map is shown without it.";
     osmMsg.hidden = false;
   }
 
@@ -1614,7 +1700,7 @@ h3.mini .zh { text-transform: none; letter-spacing: 0.02em; }
     }
     $("#lyr-roads").addEventListener("change", (e) => {
       gRoads.style.display = gRoadLabels.style.display = e.target.checked ? "" : "none";
-      attrib.hidden = !layers.osm && !e.target.checked;
+      setAttrib();
     });
   }
   function drawRoadLabels() {
@@ -1969,7 +2055,7 @@ h3.mini .zh { text-transform: none; letter-spacing: 0.02em; }
     ...(DATA.roads ? [`Road network: © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors, ODbL 1.0; fetched ${esc(DATA.roads.fetched)} via the Overpass API and simplified to ${DATA.roads.simplify_tolerance_m} m. Local streets cover the Shuinan area only.`] : []),
     `Major projects: sources are listed with each entry. The Open / Upcoming chips are our grouping of the status text.`,
     `Coordinates: WGS84 (CRS84). The map uses Web Mercator to match the OpenStreetMap tiles; the scale bar uses the east-west scale at the center of the study area.`,
-    ...(BASEMAP ? [`Basemap: © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors. Tiles from the OpenStreetMap Foundation, used under its <a href="https://operations.osmfoundation.org/policies/tiles/" target="_blank" rel="noopener">tile usage policy</a>.`] : []),
+    ...(BASEMAP ? [`Basemap: vector tiles from <a href="https://openfreemap.org" target="_blank" rel="noopener">OpenFreeMap</a> (© <a href="https://www.openmaptiles.org/" target="_blank" rel="noopener">OpenMapTiles</a>, data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors), drawn with MapLibre GL JS. Labels show the English name (OSM name:en) where one is mapped, otherwise the local name. If the vector map cannot start, the standard OpenStreetMap tiles are used instead (labels in the local language), under the OSMF <a href="https://operations.osmfoundation.org/policies/tiles/" target="_blank" rel="noopener">tile usage policy</a>.`] : []),
   ].map((t) => `<li>${t}</li>`).join("");
 
   // ---------- colour theme: Paper (deck) / White / Dark ----------
@@ -1993,5 +2079,11 @@ h3.mini .zh { text-transform: none; letter-spacing: 0.02em; }
   setBasemap(BASEMAP, false);
   new ResizeObserver(() => resize()).observe(frame);
   resize();
+  if (BASEMAP) loadVectorBasemap();
+  // read-only hook for scripts/check_basemap.mjs
+  window.__hydBasemap = {
+    get mode() { return rasterMode ? "raster" : !vmap ? "none" : vectorStyled ? "vector" : "loading"; },
+    get map() { return vmap; },
+  };
 })();
 </script>

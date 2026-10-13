@@ -313,9 +313,12 @@ def landing_values(data):
         "Detailed plan overlay: colour patches auto-traced from Figure 7-1 (unofficial English reference) and fitted to "
         "OpenStreetMap road centrelines; block edges sit a median 11 m from the nearest road, so expect errors of a few "
         "tens of metres. The Chinese plan and official GIS/CAD data prevail.",
-        '<a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors</a>: basemap tiles, used under the '
-        '<a href="https://operations.osmfoundation.org/policies/tiles/">OSM tile usage policy</a>, and the road network '
-        '(Open Database License 1.0), fetched through the Overpass API.',
+        'Basemap: vector tiles from <a href="https://openfreemap.org">OpenFreeMap</a> (© <a href="https://www.openmaptiles.org/">'
+        'OpenMapTiles</a>), drawn with MapLibre GL JS, labelled with English names (OSM name:en) where mapped; the standard '
+        'OpenStreetMap tiles serve as a fallback under the <a href="https://operations.osmfoundation.org/policies/tiles/">OSM '
+        'tile usage policy</a>.',
+        '<a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors</a>: basemap data and the road network '
+        '(Open Database License 1.0, fetched through the Overpass API).',
     ]
 
     return {

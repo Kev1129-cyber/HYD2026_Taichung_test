@@ -12,7 +12,7 @@ Live site (GitHub Pages): https://yunching0513.github.io/HYD2026_Taichung/
 
 The interface is English-first, with Chinese as the secondary language: map labels, legend and side panels are in English, and village, district, zone, project and road names carry their Chinese names. The village search accepts English or Chinese.
 
-- The 8 districts and 214 villages of the former Taichung City on an OpenStreetMap basemap; the 5 old-downtown districts (Central, East, South, West, North) carry a darker tint and a merged outline, Xitun, Nantun and Beitun a lighter one
+- The 8 districts and 214 villages of the former Taichung City on an English-labelled basemap (OpenStreetMap data); the 5 old-downtown districts (Central, East, South, West, North) carry a darker tint and a merged outline, Xitun, Nantun and Beitun a lighter one
 - Three colour themes from the switch in the header: **Paper** (the workshop deck's warm grey, the default in light mode), **White** and **Dark** (the default in dark mode); the choice is remembered in the browser and shared with the landing page
 - Pan by dragging, zoom with the wheel or a pinch; arrow keys pan, `+` / `-` zoom, `0` shows the full extent
 - Hover a village for its name and area; click or search to see its area, share of the district, area rank and village code
@@ -82,25 +82,25 @@ The **Road network** layer covers motorways down to tertiary roads, rail and met
 
 This build environment cannot reach the Overpass API, so a GitHub Actions workflow fetches the data: **Actions → Fetch OSM road network → Run workflow** runs `scripts/fetch_roads.py`, `scripts/fetch_landmarks.py` and `scripts/locate_projects.py`, rebuilds the site and commits the results. Run it again to refresh. The data is licensed under the ODbL 1.0 and must be credited "© OpenStreetMap contributors".
 
-## OpenStreetMap basemap
+## Basemap (English labels)
 
-The map uses Web Mercator and loads the standard OSM tiles:
+Standard OSM raster tiles have their labels baked in, in the local language, so the map draws vector tiles instead and chooses the label language itself:
 
-```
-https://tile.openstreetmap.org/{z}/{x}/{y}.png
-```
-
-- "© OpenStreetMap contributors" appears on the map and in the data notes, as the [OSM tile usage policy](https://operations.osmfoundation.org/policies/tiles/) requires. Do not remove it.
-- The policy allows ordinary browsing but forbids bulk downloading or prefetching. Switch to a commercial or self-hosted tile service if traffic grows.
-- The **OSM basemap** toggle turns the tiles off; if tiles fail to load, the map falls back to no basemap.
-- Opened from `file://`, browsers send no Referer and OSM may refuse tiles. Preview locally with:
+- Tiles and style: [OpenFreeMap](https://openfreemap.org) (`https://tiles.openfreemap.org/styles/positron`), OpenMapTiles schema built from OpenStreetMap data; free, no API key
+- Renderer: [MapLibre GL JS](https://maplibre.org) 4.7.1 from cdnjs, kept in step with the svg overlay (same Web Mercator, within a fraction of a pixel)
+- Labels: every name label is switched to `name:en`, falling back to the local name where OSM has no English name. In the current OSM data about 94% of named primary and secondary roads in the area have an English name, about half of the local streets do
+- Fallback: if MapLibre or the style cannot load (no WebGL, blocked network), the map uses the standard OSM tiles (`https://tile.openstreetmap.org/{z}/{x}/{y}.png`, labels in Chinese) and says so under the layer toggles; if those fail too, it shows no basemap
+- Credits on the map: "OpenFreeMap © OpenMapTiles · data © OpenStreetMap contributors" (or the OSM credit when the fallback is in use). Do not remove them.
+- The fallback tiles follow the [OSM tile usage policy](https://operations.osmfoundation.org/policies/tiles/): ordinary browsing only, no bulk downloading or prefetching.
+- **Actions → Check basemap → Run workflow** opens the map in headless Chromium, checks that the vector basemap starts, lines up with the overlay and labels in English, and attaches screenshots of the three themes (`scripts/check_basemap.mjs`).
+- Opened from `file://`, browsers may refuse to load tiles. Preview locally with:
 
   ```sh
   python3 -m http.server 8000
   # then open http://localhost:8000/
   ```
 
-- To use another tile source, change `TILE_URL` in `templates/basemap.html` and update the on-map credit.
+- To use another source, change `VECTOR_STYLE` (vector) or `TILE_URL` (fallback) in `templates/basemap.html` and update the on-map credit.
 
 ## Publishing to GitHub Pages
 
@@ -162,6 +162,7 @@ scripts/register_plan.py  fits the plan trace to OSM roads
 scripts/fetch_roads.py    fetches OSM roads (run by GitHub Actions)
 scripts/fetch_landmarks.py fetches OSM landmarks (run by GitHub Actions)
 scripts/locate_projects.py places the major projects
+scripts/check_basemap.mjs checks the basemap in a browser (run by GitHub Actions)
 data/raw/                 source data
 data/derived/             fitted plan trace, OSM roads and landmarks, project locations
 ```
@@ -208,9 +209,15 @@ DXF是畫在A3圖紙上的描圖（單位mm），本身沒有地理座標；檔�
 
 路網涵蓋原臺中市範圍的國道到區道、鐵路與捷運，以及水湳周邊巷道（放大後顯示）。本環境連不到Overpass API，因此由GitHub Actions抓取：**Actions → Fetch OSM road network → Run workflow**，會依序執行`fetch_roads.py`、`fetch_landmarks.py`、`locate_projects.py`，重建網站並commit結果。資料授權為ODbL 1.0，須標示「© OpenStreetMap contributors」。
 
-### OpenStreetMap底圖
+### 底圖（英文標註）
 
-地圖採Web Mercator投影，載入OSM標準圖磚。依[OSM圖磚使用政策](https://operations.osmfoundation.org/policies/tiles/)，圖上的「© OpenStreetMap contributors」請勿移除，也不可大量下載圖磚。以`file://`直接開啟時OSM可能拒絕提供圖磚，本機預覽請用`python3 -m http.server 8000`。要更換圖磚來源，修改`templates/basemap.html`的`TILE_URL`並更新出處標示。
+OSM標準圖磚的文字是伺服器預先畫好的，只會顯示當地語言（中文），因此地圖改用[OpenFreeMap](https://openfreemap.org)的向量圖磚（OpenMapTiles格式，資料來自OSM，免費、免API key），由[MapLibre GL JS](https://maplibre.org)在瀏覽器繪製，並與上層的SVG圖層對齊（誤差不到1像素）。
+
+- 所有名稱標註改用OSM的`name:en`；沒有英文名稱的地物維持原本的中文。目前範圍內約94%的主要與次要道路有英文名，巷道約一半。
+- 若MapLibre或樣式無法載入（例如瀏覽器不支援WebGL、網路被擋），會自動退回OSM標準圖磚（中文標註），並在圖層開關下方說明；兩者都失敗時不顯示底圖。
+- 圖上的「OpenFreeMap © OpenMapTiles · data © OpenStreetMap contributors」出處請勿移除。退回OSM圖磚時，依[OSM圖磚使用政策](https://operations.osmfoundation.org/policies/tiles/)不可大量下載。
+- **Actions → Check basemap → Run workflow**會用無頭瀏覽器開啟地圖，檢查向量底圖是否載入、是否對齊、標註是否為英文，並附上三種主題的截圖。
+- 以`file://`直接開啟時可能載不到圖磚，本機預覽請用`python3 -m http.server 8000`。要更換來源，修改`templates/basemap.html`的`VECTOR_STYLE`或`TILE_URL`並更新出處標示。
 
 ### 發布到GitHub Pages
 
