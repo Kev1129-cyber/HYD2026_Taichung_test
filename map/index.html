@@ -9,14 +9,17 @@
 <title>Taichung Base Map</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Instrument+Sans:wght@400..700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+TC:wght@400;500;600;700&family=Noto+Serif+TC:wght@500;600&display=swap">
 <style>
 /* Layout: a survey-sheet map inside a hairline neatline with coordinate ticks in the margin (left),
    a reference column of legend, lookup and plan figures (right); stacks to one column under 960px.
    Palette and type follow the HYD Healthy City Workshop deck: warm greys on #f4f4f2 with ink #1c1c1c,
    2px ink rules between blocks, Instrument Serif / Instrument Sans / JetBrains Mono, Noto TC for Chinese.
-   Themes: Paper (the deck, default in light mode), White and Dark (default in dark mode); the header switch
-   sets data-theme on <html> = "light" | "white" | "dark". */
+   Two header switches set attributes on <html>:
+     data-style = (none, the deck) | "program": after the HYD Taichung program page, with navy ink on cool grey,
+                  sun-yellow highlights, Bricolage Grotesque / IBM Plex and rounded cards;
+     data-theme = "light" | "white" | "dark"; without it, light or dark follows the system setting.
+   Each style defines its colours for all three tones; components read only the tokens below. */
 :root {
   --bg: #f4f4f2;
   --surface: #f4f4f2;
@@ -46,6 +49,19 @@
   --tile-filter: grayscale(1) contrast(0.92) brightness(1.03);
   --neutral-fill: #c9c9c5;
   --shadow: 0 8px 24px rgba(28, 28, 28, 0.18);
+  /* highlight: ink in the monochrome deck, sun yellow in the program style */
+  --hl: var(--ink);
+  --on-hl: var(--bg);
+  --hl-text: var(--ink);
+  --d0-wash-fill: var(--ink);
+  --old-band: color-mix(in srgb, var(--ink) 20%, transparent);
+  --pin-halo: var(--surface);
+  --pin-halo-w: 2px;
+  --pin-shadow: none;
+  --r-sm: 2px;
+  --r-md: 2px;
+  --rule-strong: 2px solid var(--ink);
+  --dist-char: 8.5; /* approx px per character of a district label, for label collision */
 
   --font-display: "Instrument Serif", "Noto Serif TC", "Songti TC", "PMingLiU", Georgia, serif;
   --font-body: "Instrument Sans", "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
@@ -138,6 +154,126 @@
   --shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
   color-scheme: dark;
 }
+/* program style (after the HYD Taichung program page); these rules come after the deck's so they win ties */
+:root[data-style="program"] {
+  --bg: #f3f4f7;
+  --surface: #ffffff;
+  --field: #ffffff;
+  --ground: #eceef3;
+  --ink: #16182a;
+  --ink-2: #34384c;
+  --muted: #5a5f70;
+  --rule: #dcdfe7;
+  --line-vil: #b9bdca;
+  --line-admin: #16182a;
+  --accent: #16182a;
+  --accent-ink: #ffffff;
+  --tip-bg: #16182a;
+  --tip-ink: #eeeff3;
+  --tip-muted: #a3a7b7;
+  --d0-fill: #fff4cc;
+  --d0-hot: #ffe79a;
+  --d1-fill: #ffffff;
+  --d1-hot: #f0f2f7;
+  --d0-wash: 0.28;
+  --d0-wash-hot: 0.45;
+  --d1-wash: 0.02;
+  --d1-wash-hot: 0.1;
+  --tile-filter: grayscale(1) contrast(0.9) brightness(1.04);
+  --neutral-fill: #c9ccd6;
+  --shadow: 0 8px 24px rgba(22, 24, 42, 0.16);
+  --hl: #f2b705;
+  --on-hl: #16182a;
+  --hl-text: #7e5c00;
+  --d0-wash-fill: #f2b705;
+  --old-band: color-mix(in srgb, #f2b705 75%, transparent);
+  color-scheme: light;
+  --pin-halo: #16182a;
+  --pin-halo-w: 3px;
+  --pin-shadow: drop-shadow(0 1px 1.5px rgba(0, 0, 0, 0.45));
+  --r-sm: 6px;
+  --r-md: 12px;
+  --rule-strong: 1px solid var(--rule);
+  --dist-char: 10;
+  --font-display: "Bricolage Grotesque", "Noto Sans TC", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+:root[data-style="program"][data-theme="white"] {
+  --bg: #ffffff;
+  --ground: #f3f4f7;
+  --rule: #e3e5ec;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-style="program"]:not([data-theme="light"]):not([data-theme="white"]) {
+    --bg: #11121a;
+    --surface: #1a1c28;
+    --field: #222536;
+    --ground: #151722;
+    --ink: #eeeff3;
+    --ink-2: #cdd0da;
+    --muted: #a3a7b7;
+    --rule: #2c2f40;
+    --line-vil: #454960;
+    --line-admin: #eeeff3;
+    --accent: #eeeff3;
+    --accent-ink: #11121a;
+    --tip-bg: #eeeff3;
+    --tip-ink: #16182a;
+    --tip-muted: #5a5f70;
+    --d0-fill: #2e2914;
+    --d0-hot: #3d361a;
+    --d1-fill: #1e2130;
+    --d1-hot: #272b3d;
+    --d0-wash: 0.22;
+    --d0-wash-hot: 0.36;
+    --d1-wash: 0.04;
+    --d1-wash-hot: 0.14;
+    --tile-filter: grayscale(1) invert(1) brightness(0.78) contrast(0.95);
+    --neutral-fill: #3a3d4e;
+    --shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    --hl: #f5c02a;
+    --on-hl: #16182a;
+    --hl-text: #f5c02a;
+    --d0-wash-fill: #f5c02a;
+    --old-band: color-mix(in srgb, #f5c02a 60%, transparent);
+    color-scheme: dark;
+  }
+}
+:root[data-style="program"][data-theme="dark"] {
+  --bg: #11121a;
+  --surface: #1a1c28;
+  --field: #222536;
+  --ground: #151722;
+  --ink: #eeeff3;
+  --ink-2: #cdd0da;
+  --muted: #a3a7b7;
+  --rule: #2c2f40;
+  --line-vil: #454960;
+  --line-admin: #eeeff3;
+  --accent: #eeeff3;
+  --accent-ink: #11121a;
+  --tip-bg: #eeeff3;
+  --tip-ink: #16182a;
+  --tip-muted: #5a5f70;
+  --d0-fill: #2e2914;
+  --d0-hot: #3d361a;
+  --d1-fill: #1e2130;
+  --d1-hot: #272b3d;
+  --d0-wash: 0.22;
+  --d0-wash-hot: 0.36;
+  --d1-wash: 0.04;
+  --d1-wash-hot: 0.14;
+  --tile-filter: grayscale(1) invert(1) brightness(0.78) contrast(0.95);
+  --neutral-fill: #3a3d4e;
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --hl: #f5c02a;
+  --on-hl: #16182a;
+  --hl-text: #f5c02a;
+  --d0-wash-fill: #f5c02a;
+  --old-band: color-mix(in srgb, #f5c02a 60%, transparent);
+  color-scheme: dark;
+}
 
 html, body { height: 100%; }
 body {
@@ -150,7 +286,7 @@ body {
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 button, input { font: inherit; color: inherit; }
-:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+:focus-visible { outline: 2px solid var(--hl); outline-offset: 2px; }
 
 /* Chinese as the supporting language: smaller, quieter, set in the CJK face */
 .zh {
@@ -204,7 +340,9 @@ h1 .zh { margin-left: 0.5em; font-family: "Noto Serif TC", "Songti TC", serif; f
 }
 .top-r { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
 @media (max-width: 640px) { .top-r { align-items: flex-start; } }
-.theme-switch { display: inline-flex; border: 1px solid var(--rule); border-radius: 2px; }
+.switches { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+@media (max-width: 640px) { .switches { justify-content: flex-start; } }
+.theme-switch { display: inline-flex; border: 1px solid var(--rule); border-radius: var(--r-sm); overflow: hidden; }
 .theme-switch button {
   padding: 3px 9px;
   background: transparent;
@@ -232,8 +370,9 @@ h1 .zh { margin-left: 0.5em; font-family: "Noto Serif TC", "Songti TC", serif; f
   height: clamp(340px, 62vh, 640px);
   background: var(--surface);
   border: 1px solid var(--rule);
-  border-top: 2px solid var(--ink);
-  border-radius: 2px;
+  border-top: var(--rule-strong);
+  border-radius: var(--r-md);
+  overflow: hidden;
   min-width: 0;
 }
 .aside { min-width: 0; }
@@ -258,7 +397,7 @@ h1 .zh { margin-left: 0.5em; font-family: "Noto Serif TC", "Songti TC", serif; f
   -webkit-user-select: none;
 }
 #map.dragging { cursor: grabbing; }
-#map:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
+#map:focus-visible { outline: 2px solid var(--hl); outline-offset: -3px; }
 .ground { fill: var(--ground); }
 .neatline { fill: none; stroke: var(--line-admin); stroke-width: 1; }
 
@@ -303,7 +442,7 @@ h1 .zh { margin-left: 0.5em; font-family: "Noto Serif TC", "Songti TC", serif; f
 }
 .vbase > div { width: 100%; height: 100%; }
 #map.has-tiles .ground { fill: none; }
-#map.has-tiles .vil.d0 { fill: var(--ink); fill-opacity: var(--d0-wash); }
+#map.has-tiles .vil.d0 { fill: var(--d0-wash-fill); fill-opacity: var(--d0-wash); }
 #map.has-tiles .vil.d1 { fill: var(--ink); fill-opacity: var(--d1-wash); }
 #map.has-tiles .vil.d0.is-hot, #map.has-tiles .vil.d0.is-sel { fill-opacity: var(--d0-wash-hot); }
 #map.has-tiles .vil.d1.is-hot, #map.has-tiles .vil.d1.is-sel { fill-opacity: var(--d1-wash-hot); }
@@ -320,8 +459,7 @@ h1 .zh { margin-left: 0.5em; font-family: "Noto Serif TC", "Songti TC", serif; f
 }
 .old-outline {
   fill: none;
-  stroke: var(--ink);
-  stroke-opacity: 0.2;
+  stroke: var(--old-band);
   stroke-width: 8;
   vector-effect: non-scaling-stroke;
   stroke-linejoin: round;
@@ -394,7 +532,7 @@ h1 .zh { margin-left: 0.5em; font-family: "Noto Serif TC", "Songti TC", serif; f
   padding: 0;
   background: var(--field);
   border: 1px solid var(--rule);
-  border-radius: 2px;
+  border-radius: var(--r-sm);
   color: var(--ink);
   cursor: pointer;
   font: 500 18px/1 var(--font-mono);
@@ -432,7 +570,7 @@ h1 .zh { margin-left: 0.5em; font-family: "Noto Serif TC", "Songti TC", serif; f
   padding: 7px 10px;
   background: var(--tip-bg);
   color: var(--tip-ink);
-  border-radius: 2px;
+  border-radius: var(--r-sm);
   box-shadow: var(--shadow);
   font-size: var(--fs-sm);
   line-height: 1.45;
@@ -445,7 +583,7 @@ h1 .zh { margin-left: 0.5em; font-family: "Noto Serif TC", "Songti TC", serif; f
 /* ---------- reference column ---------- */
 .aside section {
   padding-block: 10px 18px;
-  border-top: 2px solid var(--ink);
+  border-top: var(--rule-strong);
 }
 h2 {
   margin: 0 0 10px;
@@ -474,7 +612,7 @@ h2 .zh.block { margin-top: 3px; }
   padding: 6px 8px;
   background: transparent;
   border: 1px solid var(--rule);
-  border-radius: 2px;
+  border-radius: var(--r-sm);
   text-align: left;
   cursor: pointer;
 }
@@ -501,7 +639,7 @@ h2 .zh.block { margin-top: 3px; }
 .legend-lines li { display: flex; align-items: center; gap: 8px; }
 .line-key { width: 26px; height: 0; border-top: 2px solid var(--line-admin); }
 .line-key.thin { border-top: 1px solid var(--line-vil); }
-.line-key.band { height: 8px; border-top: 0; background: color-mix(in srgb, var(--ink) 20%, transparent); }
+.line-key.band { height: 8px; border-top: 0; background: var(--old-band); }
 .toggles {
   display: flex;
   flex-wrap: wrap;
@@ -521,14 +659,14 @@ h2 .zh.block { margin-top: 3px; }
   padding: 7px 10px;
   background: var(--field);
   border: 1px solid var(--rule);
-  border-radius: 2px;
+  border-radius: var(--r-sm);
 }
 .search button {
   padding: 7px 14px;
   background: var(--accent);
   color: var(--accent-ink);
   border: 0;
-  border-radius: 2px;
+  border-radius: var(--r-sm);
   font-weight: 600;
   cursor: pointer;
 }
@@ -544,7 +682,7 @@ h2 .zh.block { margin-top: 3px; }
   padding: 2px 8px;
   background: transparent;
   border: 1px solid var(--rule);
-  border-radius: 2px;
+  border-radius: var(--r-sm);
   font-size: var(--fs-xs);
   color: var(--ink-2);
   cursor: pointer;
@@ -562,7 +700,7 @@ h2 .zh.block { margin-top: 3px; }
 /* plan land-use chart */
 .split { display: flex; gap: 2px; height: 14px; }
 .split span { display: block; height: 100%; }
-.split .zones { background: var(--accent); border-radius: 4px 0 0 4px; }
+.split .zones { background: var(--hl); border-radius: 4px 0 0 4px; }
 .split .pub { background: var(--neutral-fill); border-radius: 0 4px 4px 0; }
 .split-legend {
   display: grid;
@@ -594,10 +732,10 @@ h2 .zh.block { margin-top: 3px; }
   display: block;
   height: 100%;
   min-width: 2px;
-  background: var(--accent);
+  background: var(--hl);
   border-radius: 0 4px 4px 0;
 }
-.zrow:not(.zhead):hover { background: color-mix(in srgb, var(--accent) 7%, transparent); }
+.zrow:not(.zhead):hover { background: color-mix(in srgb, var(--hl) 9%, transparent); }
 
 /* projects */
 .projects { display: grid; gap: 13px; margin: 0; padding: 0; list-style: none; }
@@ -624,7 +762,7 @@ h2 .zh.block { margin-top: 3px; }
   white-space: nowrap;
 }
 .chip::before { content: ""; width: 7px; height: 7px; border-radius: 50%; box-sizing: border-box; border: 1.5px dashed var(--muted); }
-.chip.open::before { background: var(--ink); border: 0; }
+.chip.open::before { background: var(--hl); border: 0; }
 .chip.pending::before { background: transparent; border: 1.5px solid var(--ink); }
 
 .sources { margin: 0; padding-left: 1.1em; font-size: var(--fs-xs); color: var(--ink-2); display: grid; gap: 6px; }
@@ -665,8 +803,8 @@ h2 .zh.block { margin-top: 3px; }
 
 /* major projects: numbered markers, dashed footprint on hover / selection */
 .proj-hit { fill: transparent; cursor: pointer; }
-.proj-dot { fill: var(--ink); stroke: var(--surface); stroke-width: 2px; paint-order: stroke; pointer-events: none; }
-.proj-num { font: 700 10px var(--font-mono); fill: var(--surface); text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+.proj-dot { fill: var(--hl); stroke: var(--pin-halo); stroke-width: var(--pin-halo-w); paint-order: stroke; filter: var(--pin-shadow); pointer-events: none; }
+.proj-num { font: 700 10px var(--font-mono); fill: var(--on-hl); text-anchor: middle; dominant-baseline: central; pointer-events: none; }
 .proj-g.is-sel .proj-dot { stroke: var(--ink); stroke-width: 6px; stroke-opacity: 0.25; }
 .proj-foot {
   fill: var(--ink);
@@ -683,8 +821,8 @@ h2 .zh.block { margin-top: 3px; }
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: var(--ink);
-  color: var(--surface);
+  background: var(--hl);
+  color: var(--on-hl);
   font: 700 10.5px var(--font-mono);
   flex: none;
 }
@@ -735,17 +873,35 @@ h2 .zh.block { margin-top: 3px; }
   padding: 5px 11px;
   background: var(--field);
   border: 1px solid var(--rule);
-  border-radius: 2px;
+  border-radius: var(--r-sm);
   font-size: var(--fs-sm);
   cursor: pointer;
 }
-.btn-s:hover { border-color: var(--ink); }
-.btn-s[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn-s:hover { border-color: var(--hl); }
+.btn-s[aria-pressed="true"] { background: var(--hl); color: var(--on-hl); border-color: var(--hl); }
 #adj-out { width: 100%; min-height: 9em; margin-top: 8px; padding: 6px; font: 11px/1.4 var(--font-mono); background: var(--field); color: var(--ink); border: 1px solid var(--rule); }
 h3.mini { margin: 16px 0 6px; font: 500 10.5px var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
 h3.mini .zh { text-transform: none; letter-spacing: 0.02em; }
 .refs { display: grid; gap: 7px; margin: 0; padding: 0; list-style: none; font-size: var(--fs-sm); }
 .refs .src { font-size: var(--fs-xs); color: var(--muted); }
+
+/* ---------- program style: type and details ---------- */
+:root[data-style="program"] h1 { font-weight: 800; font-size: 29px; letter-spacing: -0.02em; }
+:root[data-style="program"] h1::before { content: "#"; color: var(--hl-text); }
+:root[data-style="program"] h1 i { font-style: normal; }
+:root[data-style="program"] h1 .zh { font-family: var(--font-zh); font-size: 0.55em; font-weight: 600; letter-spacing: 0.04em; }
+:root[data-style="program"] h2 { font-weight: 800; font-size: 21px; letter-spacing: -0.01em; }
+:root[data-style="program"] .sel-head h3 { font-weight: 800; font-size: 22px; letter-spacing: -0.01em; }
+:root[data-style="program"] .dlabel .l1 { font-style: normal; font-weight: 800; font-size: 17px; letter-spacing: -0.01em; }
+:root[data-style="program"] .dlabel .l2 { font-family: var(--font-zh); font-weight: 600; letter-spacing: 0.2em; }
+:root[data-style="program"] .eyebrow { letter-spacing: 0.08em; }
+:root[data-style="program"] .eyebrow a { color: var(--hl-text); }
+:root[data-style="program"] .facts { padding: 3px 9px; background: var(--surface); border: 1px solid var(--rule); border-radius: 4px; }
+:root[data-style="program"] .legend-dist { background: var(--surface); }
+:root[data-style="program"] .legend-dist:hover { background: var(--surface); border-color: var(--hl); }
+:root[data-style="program"] .search button:hover { background: var(--hl); color: var(--on-hl); }
+:root[data-style="program"] .map-ctrl button { background: var(--surface); box-shadow: 0 1px 2px rgba(22, 24, 42, 0.14); }
+:root[data-style="program"] .swatch { border-radius: 3px; }
 
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
@@ -753,8 +909,9 @@ h3.mini .zh { text-transform: none; letter-spacing: 0.02em; }
 </style>
 <script>
   try {
-    const t = localStorage.getItem("hyd2026-theme");
+    const t = localStorage.getItem("hyd2026-theme"), st = localStorage.getItem("hyd2026-style");
     if (["light", "white", "dark"].includes(t)) document.documentElement.dataset.theme = t;
+    if (st === "program") document.documentElement.dataset.style = st;
   } catch (err) { /* storage unavailable: follow the system setting */ }
 </script>
 
@@ -765,10 +922,16 @@ h3.mini .zh { text-transform: none; letter-spacing: 0.02em; }
       <h1>Former Taichung City <i>Base Map</i><span class="zh" lang="zh-Hant-TW">原臺中市基本圖</span></h1>
     </div>
     <div class="top-r">
-      <div class="theme-switch" role="group" aria-label="Colour theme">
-        <button type="button" data-theme-set="light" aria-pressed="false">Paper<span class="zh" lang="zh-Hant-TW">米白</span></button>
-        <button type="button" data-theme-set="white" aria-pressed="false">White<span class="zh" lang="zh-Hant-TW">白色</span></button>
-        <button type="button" data-theme-set="dark" aria-pressed="false">Dark<span class="zh" lang="zh-Hant-TW">深色</span></button>
+      <div class="switches">
+        <div class="theme-switch" role="group" aria-label="Style">
+          <button type="button" data-style-set="deck" aria-pressed="false">Deck<span class="zh" lang="zh-Hant-TW">簡報</span></button>
+          <button type="button" data-style-set="program" aria-pressed="false">Program<span class="zh" lang="zh-Hant-TW">議程</span></button>
+        </div>
+        <div class="theme-switch" role="group" aria-label="Colour theme">
+          <button type="button" data-theme-set="light" aria-pressed="false">Light<span class="zh" lang="zh-Hant-TW">淺色</span></button>
+          <button type="button" data-theme-set="white" aria-pressed="false">White<span class="zh" lang="zh-Hant-TW">白色</span></button>
+          <button type="button" data-theme-set="dark" aria-pressed="false">Dark<span class="zh" lang="zh-Hant-TW">深色</span></button>
+        </div>
       </div>
       <p class="facts" id="facts"></p>
     </div>
@@ -1052,7 +1215,9 @@ h3.mini .zh { text-transform: none; letter-spacing: 0.02em; }
     d.compact = d.short;
     d.labelEl = makeLabel("dlabel", d.full, d.zh);
   }
-  const DIST_CHAR = 8.5; // approx px per character of the italic serif district label
+  let DIST_CHAR = 8.5; // approx px per character of a district label; set from --dist-char per style
+  const readDistChar = () => { DIST_CHAR = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--dist-char")) || 8.5; };
+  readDistChar();
   const distByArea = [...districts].sort((a, b) => b.p.area_km2 - a.p.area_km2);
   for (const v of villages) v.labelEl = makeLabel("vlabel", v.short, v.zh);
 
@@ -1930,7 +2095,7 @@ h3.mini .zh { text-transform: none; letter-spacing: 0.02em; }
   split.setAttribute("aria-label", `Land-use zones ${fmt(subtotal.pct)}%, public facility land ${fmt(pub.pct)}%`);
   split.innerHTML = `<span class="zones" style="flex:${subtotal.ha} 1 0"></span><span class="pub" style="flex:${pub.ha} 1 0"></span>`;
   $("#split-legend").innerHTML = `
-    <li><span class="key" style="background:var(--accent)"></span><span>Land-use zones</span>${zh("土地使用分區")}<span class="v num">${fmt(subtotal.ha)} ha · ${fmt(subtotal.pct)}%</span></li>
+    <li><span class="key" style="background:var(--hl)"></span><span>Land-use zones</span>${zh("土地使用分區")}<span class="v num">${fmt(subtotal.ha)} ha · ${fmt(subtotal.pct)}%</span></li>
     <li><span class="key" style="background:var(--neutral-fill)"></span><span>${esc(cap(pub.en))}</span>${zh(pub.zh)}<span class="v num">${fmt(pub.ha)} ha · ${fmt(pub.pct)}%</span></li>`;
   const maxHa = Math.max(...zones.map((z) => z.ha));
   const zbars = $("#zbars");
@@ -2066,19 +2231,30 @@ h3.mini .zh { text-transform: none; letter-spacing: 0.02em; }
     ...(BASEMAP ? [`Basemap: vector tiles from <a href="https://openfreemap.org" target="_blank" rel="noopener">OpenFreeMap</a> (© <a href="https://www.openmaptiles.org/" target="_blank" rel="noopener">OpenMapTiles</a>, data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors), drawn with MapLibre GL JS. Labels show the English name (OSM name:en) where one is mapped, otherwise the local name. If the vector map cannot start, the standard OpenStreetMap tiles are used instead (labels in the local language), under the OSMF <a href="https://operations.osmfoundation.org/policies/tiles/" target="_blank" rel="noopener">tile usage policy</a>.`] : []),
   ].map((t) => `<li>${t}</li>`).join("");
 
-  // ---------- colour theme: Paper (deck) / White / Dark ----------
-  // The choice is stored per browser and shared with the landing page; without one the system setting decides.
-  const THEME_KEY = "hyd2026-theme";
+  // ---------- style (Deck / Program) and tone (Light / White / Dark) ----------
+  // Both choices are stored per browser and shared with the landing page; without a tone the system setting decides.
+  const root = document.documentElement;
   const sysDark = window.matchMedia("(prefers-color-scheme: dark)");
   const themeBtns = [...document.querySelectorAll("[data-theme-set]")];
+  const styleBtns = [...document.querySelectorAll("[data-style-set]")];
+  const store = (key, value) => { try { localStorage.setItem(key, value); } catch (err) { /* kept for this visit only */ } };
   const syncTheme = () => {
-    const t = document.documentElement.dataset.theme || (sysDark.matches ? "dark" : "light");
+    const t = root.dataset.theme || (sysDark.matches ? "dark" : "light");
     for (const b of themeBtns) b.setAttribute("aria-pressed", String(b.dataset.themeSet === t));
+    const st = root.dataset.style || "deck";
+    for (const b of styleBtns) b.setAttribute("aria-pressed", String(b.dataset.styleSet === st));
   };
   for (const b of themeBtns) b.addEventListener("click", () => {
-    document.documentElement.dataset.theme = b.dataset.themeSet;
-    try { localStorage.setItem(THEME_KEY, b.dataset.themeSet); } catch (err) { /* kept for this visit only */ }
+    root.dataset.theme = b.dataset.themeSet;
+    store("hyd2026-theme", b.dataset.themeSet);
     syncTheme();
+  });
+  for (const b of styleBtns) b.addEventListener("click", () => {
+    if (b.dataset.styleSet === "deck") delete root.dataset.style; else root.dataset.style = b.dataset.styleSet;
+    store("hyd2026-style", b.dataset.styleSet);
+    syncTheme();
+    readDistChar();
+    draw(); // district labels change width with the typeface
   });
   sysDark.addEventListener("change", syncTheme);
   syncTheme();

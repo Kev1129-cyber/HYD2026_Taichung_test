@@ -13,7 +13,10 @@ Live site (GitHub Pages): https://yunching0513.github.io/HYD2026_Taichung/
 The interface is English-first, with Chinese as the secondary language: map labels, legend and side panels are in English, and village, district, zone, project and road names carry their Chinese names. The village search accepts English or Chinese.
 
 - The 8 districts and 214 villages of the former Taichung City on an English-labelled basemap (OpenStreetMap data); the 5 old-downtown districts (Central, East, South, West, North) carry a darker tint and a merged outline, Xitun, Nantun and Beitun a lighter one
-- Three colour themes from the switch in the header: **Paper** (the workshop deck's warm grey, the default in light mode), **White** and **Dark** (the default in dark mode); the choice is remembered in the browser and shared with the landing page
+- Two styles and three tones from the switches in the header, remembered in the browser and shared with the landing page:
+  - **Deck**: the monochrome look of the HYD Healthy City Workshop deck (Instrument Serif, warm greys, 2px ink rules)
+  - **Program**: after the HYD Taichung program page (Bricolage Grotesque and IBM Plex, navy ink on cool grey, sun-yellow highlights for the old downtown, project markers and charts, rounded cards)
+  - **Light**, **White** or **Dark** for either style; until one is chosen, light or dark follows the system setting
 - Pan by dragging, zoom with the wheel or a pinch; arrow keys pan, `+` / `-` zoom, `0` shows the full extent
 - Hover a village for its name and area; click or search to see its area, share of the district, area rank and village code
 - Road network from OpenStreetMap, with English and Chinese road names along the arterials
@@ -180,7 +183,10 @@ data/derived/             fitted plan trace, OSM roads and landmarks, project lo
 **原臺中市基本圖（`map/index.html`）**：介面以英文為主、中文為輔，里名、區名、分區、建設與路名都附上中文，搜尋可輸入英文或中文里名。
 
 - 原臺中市8區、214里的界線，疊在OpenStreetMap底圖上；舊市區5區（中、東、南、西、北區）用較深的底色並加上合併外框，西屯、南屯、北屯用較淺的底色
-- 頁首可切換三種主題：**Paper**米白（工作坊簡報的暖灰，淺色模式預設）、**White**白色、**Dark**深色（深色模式預設），選擇會記在瀏覽器中，並與成果首頁同步
+- 頁首可切換兩種風格與三種色調，選擇會記在瀏覽器中，並與成果首頁同步：
+  - **Deck**簡報風：HYD健康城市工作坊簡報的黑白灰風格（Instrument Serif、暖灰、2px墨線）
+  - **Program**議程風：參考HYD臺中議程頁（Bricolage Grotesque與IBM Plex字體、深藍字配冷灰底、圓角卡片），舊市區、重大建設標記與圖表改用黃色重點色
+  - 兩種風格都有**Light**淺色、**White**白色、**Dark**深色；尚未選擇時依裝置設定顯示淺色或深色
 - 拖曳平移、滾輪或雙指縮放；方向鍵平移、`+`／`-`縮放、`0`回到全圖
 - 滑過里顯示名稱與面積；點選或搜尋里名可查看面積、占行政區比例、面積排序與村里代碼
 - OSM路網，主要道路沿線標示英文與中文路名

@@ -1,11 +1,12 @@
 <title>HYD2026 Taichung Outputs</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Instrument+Sans:wght@400..700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+TC:wght@400;500;600;700&family=Noto+Serif+TC:wght@500;600&display=swap">
 <style>
 /* Layout: one reading column; each output sits under a 2px ink rule with its map outline beside the description.
    Same palette and type as the map page (after the HYD Healthy City Workshop deck) so the two read as one set.
-   Themes as on the map: Paper (default in light mode), White, Dark; data-theme = "light" | "white" | "dark". */
+   Style and tone switches as on the map: data-style = (none, the deck) | "program" (after the HYD Taichung program
+   page), data-theme = "light" | "white" | "dark" (none: follow the system). */
 :root {
   --bg: #f4f4f2;
   --field: #fbfbf9;
@@ -20,6 +21,14 @@
   --accent-ink: #f2f2ef;
   --d0-fill: #c9c9c5;
   --d1-fill: #e4e4e0;
+  --surface: var(--field);
+  --hl: var(--ink);
+  --on-hl: var(--bg);
+  --hl-text: var(--ink);
+  --old-band: color-mix(in srgb, var(--ink) 20%, transparent);
+  --r-sm: 2px;
+  --r-md: 0px;
+  --rule-strong: 2px solid var(--ink);
 
   --font-display: "Instrument Serif", "Noto Serif TC", "Songti TC", "PMingLiU", Georgia, serif;
   --font-body: "Instrument Sans", "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
@@ -70,6 +79,79 @@
   --d1-fill: #2c2c2a;
   color-scheme: dark;
 }
+/* program style (after the HYD Taichung program page); after the deck's rules so it wins ties */
+:root[data-style="program"] {
+  --bg: #f3f4f7;
+  --field: #ffffff;
+  --surface: #ffffff;
+  --ground: #eceef3;
+  --ink: #16182a;
+  --ink-2: #34384c;
+  --muted: #5a5f70;
+  --rule: #dcdfe7;
+  --line-vil: #b9bdca;
+  --line-admin: #16182a;
+  --accent: #16182a;
+  --accent-ink: #ffffff;
+  --d0-fill: #fff4cc;
+  --d1-fill: #ffffff;
+  --hl: #f2b705;
+  --on-hl: #16182a;
+  --hl-text: #7e5c00;
+  --old-band: color-mix(in srgb, #f2b705 75%, transparent);
+  color-scheme: light;
+  --r-sm: 6px;
+  --r-md: 12px;
+  --rule-strong: 1px solid var(--rule);
+  --font-display: "Bricolage Grotesque", "Noto Sans TC", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+:root[data-style="program"][data-theme="white"] { --bg: #ffffff; --ground: #f3f4f7; --rule: #e3e5ec; }
+@media (prefers-color-scheme: dark) {
+  :root[data-style="program"]:not([data-theme="light"]):not([data-theme="white"]) {
+    --bg: #11121a;
+    --field: #1a1c28;
+    --surface: #1a1c28;
+    --ground: #151722;
+    --ink: #eeeff3;
+    --ink-2: #cdd0da;
+    --muted: #a3a7b7;
+    --rule: #2c2f40;
+    --line-vil: #454960;
+    --line-admin: #eeeff3;
+    --accent: #eeeff3;
+    --accent-ink: #11121a;
+    --d0-fill: #2e2914;
+    --d1-fill: #1e2130;
+    --hl: #f5c02a;
+    --on-hl: #16182a;
+    --hl-text: #f5c02a;
+    --old-band: color-mix(in srgb, #f5c02a 60%, transparent);
+    color-scheme: dark;
+  }
+}
+:root[data-style="program"][data-theme="dark"] {
+  --bg: #11121a;
+  --field: #1a1c28;
+  --surface: #1a1c28;
+  --ground: #151722;
+  --ink: #eeeff3;
+  --ink-2: #cdd0da;
+  --muted: #a3a7b7;
+  --rule: #2c2f40;
+  --line-vil: #454960;
+  --line-admin: #eeeff3;
+  --accent: #eeeff3;
+  --accent-ink: #11121a;
+  --d0-fill: #2e2914;
+  --d1-fill: #1e2130;
+  --hl: #f5c02a;
+  --on-hl: #16182a;
+  --hl-text: #f5c02a;
+  --old-band: color-mix(in srgb, #f5c02a 60%, transparent);
+  color-scheme: dark;
+}
 
 * { box-sizing: border-box; }
 body {
@@ -80,7 +162,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 a { color: var(--ink); text-underline-offset: 3px; }
-:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+:focus-visible { outline: 2px solid var(--hl); outline-offset: 2px; }
 
 .page {
   max-width: 980px;
@@ -92,8 +174,10 @@ a { color: var(--ink); text-underline-offset: 3px; }
 }
 .page > * { min-width: 0; }
 
-.bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; }
-.theme-switch { display: inline-flex; border: 1px solid var(--rule); border-radius: 2px; }
+/* when the switches do not fit beside the eyebrow they wrap above it, still on the right */
+.bar { display: flex; flex-wrap: wrap-reverse; align-items: center; justify-content: space-between; gap: 8px 16px; }
+.switches { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
+.theme-switch { display: inline-flex; border: 1px solid var(--rule); border-radius: var(--r-sm); overflow: hidden; }
 .theme-switch button {
   padding: 3px 9px;
   background: transparent;
@@ -145,7 +229,7 @@ h1 .zh { font-family: "Noto Serif TC", "Songti TC", serif; font-size: 0.42em; fo
 h2 {
   margin: 0 0 16px;
   padding-top: 10px;
-  border-top: 2px solid var(--ink);
+  border-top: var(--rule-strong);
   font: 500 11.5px/1.4 var(--font-mono);
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -166,6 +250,7 @@ h2 {
   display: block;
   padding: 10px;
   border: 1px solid var(--rule);
+  border-radius: var(--r-md);
   background: var(--field);
 }
 .thumb { display: block; width: 100%; height: auto; }
@@ -173,8 +258,8 @@ h2 {
 .thumb .v.d0 { fill: var(--d0-fill); }
 .thumb .v.d1 { fill: var(--d1-fill); }
 .thumb .dist { fill: none; stroke: var(--line-admin); stroke-width: 1.4; stroke-linejoin: round; }
-.thumb .old { fill: none; stroke: var(--ink); stroke-opacity: 0.2; stroke-width: 6; stroke-linejoin: round; }
-.thumb-link:hover { border-color: var(--ink); }
+.thumb .old { fill: none; stroke: var(--old-band); stroke-width: 6; stroke-linejoin: round; }
+.thumb-link:hover { border-color: var(--hl); }
 
 .kicker { margin: 0; font: 500 11px/1.4 var(--font-mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
 .work h3 { margin: 6px 0 10px; font: 400 34px/1.1 var(--font-display); letter-spacing: -0.5px; }
@@ -196,11 +281,22 @@ h2 {
   padding: 10px 20px;
   background: var(--accent);
   color: var(--accent-ink);
-  border-radius: 2px;
+  border-radius: var(--r-sm);
   font-weight: 600;
   text-decoration: none;
 }
 .btn:hover { opacity: 0.86; }
+
+/* program style: type and details */
+:root[data-style="program"] h1 { font-weight: 800; font-size: clamp(34px, 5.6vw, 58px); line-height: 0.98; letter-spacing: -0.02em; }
+:root[data-style="program"] h1::before { content: "#"; color: var(--hl-text); }
+:root[data-style="program"] h1 i,
+:root[data-style="program"] .work h3 i { font-style: normal; }
+:root[data-style="program"] h1 .zh,
+:root[data-style="program"] .work h3 .zh.block { font-family: var(--font-zh); font-weight: 600; letter-spacing: 0.04em; }
+:root[data-style="program"] .work h3 { font-weight: 800; font-size: 30px; letter-spacing: -0.01em; }
+:root[data-style="program"] .eyebrow, :root[data-style="program"] h2, :root[data-style="program"] .kicker { letter-spacing: 0.08em; }
+:root[data-style="program"] .btn:hover { opacity: 1; background: var(--hl); color: var(--on-hl); }
 
 /* downloads */
 .table-wrap { overflow-x: auto; }
@@ -218,8 +314,9 @@ footer a { color: inherit; }
 </style>
 <script>
   try {
-    const t = localStorage.getItem("hyd2026-theme");
+    const t = localStorage.getItem("hyd2026-theme"), st = localStorage.getItem("hyd2026-style");
     if (["light", "white", "dark"].includes(t)) document.documentElement.dataset.theme = t;
+    if (st === "program") document.documentElement.dataset.style = st;
   } catch (err) { /* storage unavailable: follow the system setting */ }
 </script>
 
@@ -227,10 +324,16 @@ footer a { color: inherit; }
   <header>
     <div class="bar">
       <p class="eyebrow">#HackYourDistrict 2026 · Taichung · Former city and Shuinan layers</p>
-      <div class="theme-switch" role="group" aria-label="Colour theme">
-        <button type="button" data-theme-set="light" aria-pressed="false">Paper<span class="zh" lang="zh-Hant-TW">米白</span></button>
-        <button type="button" data-theme-set="white" aria-pressed="false">White<span class="zh" lang="zh-Hant-TW">白色</span></button>
-        <button type="button" data-theme-set="dark" aria-pressed="false">Dark<span class="zh" lang="zh-Hant-TW">深色</span></button>
+      <div class="switches">
+        <div class="theme-switch" role="group" aria-label="Style">
+          <button type="button" data-style-set="deck" aria-pressed="false">Deck<span class="zh" lang="zh-Hant-TW">簡報</span></button>
+          <button type="button" data-style-set="program" aria-pressed="false">Program<span class="zh" lang="zh-Hant-TW">議程</span></button>
+        </div>
+        <div class="theme-switch" role="group" aria-label="Colour theme">
+          <button type="button" data-theme-set="light" aria-pressed="false">Light<span class="zh" lang="zh-Hant-TW">淺色</span></button>
+          <button type="button" data-theme-set="white" aria-pressed="false">White<span class="zh" lang="zh-Hant-TW">白色</span></button>
+          <button type="button" data-theme-set="dark" aria-pressed="false">Dark<span class="zh" lang="zh-Hant-TW">深色</span></button>
+        </div>
       </div>
     </div>
     <h1>HYD2026 Taichung <i>Outputs</i><span class="zh" lang="zh-Hant-TW">臺中成果</span></h1>
@@ -273,15 +376,25 @@ footer a { color: inherit; }
 
   <script>
     (() => {
+      const root = document.documentElement;
       const sysDark = window.matchMedia("(prefers-color-scheme: dark)");
       const btns = [...document.querySelectorAll("[data-theme-set]")];
+      const styleBtns = [...document.querySelectorAll("[data-style-set]")];
+      const store = (k, v) => { try { localStorage.setItem(k, v); } catch (err) { /* this visit only */ } };
       const sync = () => {
-        const t = document.documentElement.dataset.theme || (sysDark.matches ? "dark" : "light");
+        const t = root.dataset.theme || (sysDark.matches ? "dark" : "light");
         for (const b of btns) b.setAttribute("aria-pressed", String(b.dataset.themeSet === t));
+        const st = root.dataset.style || "deck";
+        for (const b of styleBtns) b.setAttribute("aria-pressed", String(b.dataset.styleSet === st));
       };
       for (const b of btns) b.addEventListener("click", () => {
-        document.documentElement.dataset.theme = b.dataset.themeSet;
-        try { localStorage.setItem("hyd2026-theme", b.dataset.themeSet); } catch (err) { /* this visit only */ }
+        root.dataset.theme = b.dataset.themeSet;
+        store("hyd2026-theme", b.dataset.themeSet);
+        sync();
+      });
+      for (const b of styleBtns) b.addEventListener("click", () => {
+        if (b.dataset.styleSet === "deck") delete root.dataset.style; else root.dataset.style = b.dataset.styleSet;
+        store("hyd2026-style", b.dataset.styleSet);
         sync();
       });
       sysDark.addEventListener("change", sync);
