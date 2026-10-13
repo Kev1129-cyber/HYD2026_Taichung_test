@@ -1,7 +1,8 @@
 name: Fetch OSM road network
 
-# Pulls roads and rail for the study area from the Overpass API, rebuilds the
-# site and commits the result. Run it by hand (Actions tab > Run workflow)
+# Pulls roads and rail for the study area, plus the named landmarks used to
+# place the major projects, from the Overpass API; rebuilds the site and
+# commits the result. Run it by hand (Actions tab > Run workflow)
 # whenever the road layer should be refreshed.
 on:
   workflow_dispatch:
@@ -23,6 +24,9 @@ jobs:
       - name: Fetch roads from Overpass
         run: python3 scripts/fetch_roads.py
 
+      - name: Fetch project landmarks from Overpass
+        run: python3 scripts/fetch_landmarks.py
+
       - name: Rebuild site
         run: python3 scripts/build_map.py
 
@@ -30,10 +34,10 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/derived/roads_osm.geojson index.html map/index.html
+          git add data/derived/roads_osm.geojson data/derived/landmarks_osm.geojson index.html map/index.html
           if git diff --cached --quiet; then
             echo "Road data unchanged."
             exit 0
           fi
-          git commit -m "Update OSM road network ($(date -u +%Y-%m-%d))"
+          git commit -m "Update OSM road network and landmarks ($(date -u +%Y-%m-%d))"
           git push
